@@ -9,6 +9,7 @@ import java.util.Map;
 
 import jxl.Workbook;
 import jxl.write.Label;
+import jxl.write.WritableCell;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
@@ -55,15 +56,26 @@ public class ExcelWriter {
 		
 		Label label = new Label(0, 0, "Name");
 		sheet1.addCell(label);
-
-		label = new Label(0, 1, "count");
-		sheet1.addCell(label);
 		
+		// make the legend for all counters
+		int [] oneCounter = allWorkers.get(0).getCounter();
+		for(int c = 0; c < oneCounter.length; c++){
+			label = new Label(0, 1 + c, "counter " + c);
+			sheet1.addCell(label);
+		}
+		
+		// write every counter
 		for(int i = 0; i < allWorkers.size(); i++){
 			Label name = new Label(i + 1, 0, allWorkers.get(i).getName());
 			sheet1.addCell(name);
-			Label count = new Label(i + 1, 1, String.valueOf(allWorkers.get(i).getCounter()[0]));
-			sheet1.addCell(count);
+			
+			for(int c = 0; c < oneCounter.length; c++){
+				sheet1.addCell(new jxl.write.Number(i + 1, c + 1, allWorkers.get(i).getCounter()[c]));
+			}
+			
+			// old solution
+			//Label count = new Label(i + 1, 1, String.valueOf(allWorkers.get(i).getCounter()[0]));
+			//sheet1.addCell(count);
 		}
 		
 	}
