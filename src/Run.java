@@ -149,6 +149,7 @@ public class Run {
 				rSelect.counterRanking();
 				rSelect.eventRanking(impactOfPrefEvent);
 				rSelect.lastActiveRaking();
+				rSelect.nextPreferedDateRanking(coolDownTime, 1000);
 				worker = rSelect.bestWorker(shuffle);
 				
 				//System.out.println("ranked0: " + Arrays.toString(workerList));
