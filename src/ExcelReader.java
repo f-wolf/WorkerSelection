@@ -251,6 +251,7 @@ public class ExcelReader {
 			// int month = cal.get(Calendar.MONTH); better?
 			cFinal2.set(Calendar.HOUR_OF_DAY, t2.get(11));
 			cFinal2.set(Calendar.MINUTE, t2.get(12));
+			cFinal2.set(Calendar.SECOND, t2.get(13));
 			// System.out.println("t2: " +t2.getTime() + " " + t2.get(12));
 			// System.out.println("cf2: " + cFinal2.getTime());
 			Date theDate2 = cFinal2.getTime();
