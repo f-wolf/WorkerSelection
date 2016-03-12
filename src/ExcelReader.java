@@ -406,6 +406,9 @@ public class ExcelReader {
 				worker1.setCounter(counter);
 			}
 			
+			// read last date
+			Date lastDate = ((DateCell) sheet0.getCell(4 + i, 32)).getDate();
+			worker1.setLastDate(lastDate);
 			
 			allWorkers.add(worker1);
 			
