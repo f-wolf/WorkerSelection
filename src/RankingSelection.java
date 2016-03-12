@@ -67,13 +67,48 @@ public class RankingSelection {
 		for(Worker w:workers){
 			int wID = w.getId();
 			Date lastActive = w.getLastDate();
-			long diff = getDateDiff(lastActive, eDate, TimeUnit.DAYS);
+			long diff = 1;
+			if(lastActive != null){
+				diff = getDateDiff(lastActive, eDate, TimeUnit.DAYS);
+				if(diff == 0){
+					// avoid problems with log(0)
+					diff = 1;
+				}
+			}
 			double cubed = Math.pow(diff, 3);
 			double natLog = Math.log(cubed);
 			int scoreDiff = (int) Math.round(natLog);
 			
 			ranking.put(wID, ranking.get(wID) - scoreDiff);
 		}
+		
+		
+	}
+	
+	public void nextPreferedDateRanking(){
+		/*
+		 * make the selection more unlikely if the worker is close to an upcoming prefered event
+		 */
+		
+		// are there prefered dates?
+		// what is the closest?
+		// calc difference
+		
+		for(Worker w:workers){
+			DatesCollection preferedDates = w.getPreferedDates();
+			ArrayList<Integer> preferedWholeDates = preferedDates.getWholeDates();
+			HashMap<Integer, Integer> preferedSpecificEvents = preferedDates.getSpecificEvents();
+			
+			
+			
+			
+			
+		}
+		
+		
+		
+		
+		
 		
 		
 	}
