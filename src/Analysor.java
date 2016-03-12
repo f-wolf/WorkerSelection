@@ -81,7 +81,8 @@ public class Analysor {
 		
 		// write day
 		DateFormat dayFormat = new SimpleDateFormat("EEEE");
-		output[0] = dayFormat.format(eDate);
+		String dayName = dayFormat.format(eDate);
+		output[0] = dayName.substring(0, 2);
 
 		// write date
 		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
