@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -85,32 +86,68 @@ public class RankingSelection {
 		
 	}
 	
-	public void nextPreferedDateRanking(){
+	public void nextPreferedDateRanking(int preFreeze, int freezeForce){
 		/*
-		 * make the selection more unlikely if the worker is close to an upcoming prefered event
+		 * make the selection more unlikely if the worker is close to an upcoming preferred event
 		 */
 		
-		// are there prefered dates?
-		// what is the closest?
-		// calc difference
-		
+		Date eDate = e.getDate();
+		int eDateDayOfYear = calcDayOfYear(eDate);
+
 		for(Worker w:workers){
+			int wID = w.getId();
 			DatesCollection preferedDates = w.getPreferedDates();
 			ArrayList<Integer> preferedWholeDates = preferedDates.getWholeDates();
 			HashMap<Integer, Integer> preferedSpecificEvents = preferedDates.getSpecificEvents();
 			
+			// determine smallest difference between current date and a future date
+			int minDiff = 1000;
+			if(!preferedWholeDates.isEmpty()){
+				for(int prefDate:preferedWholeDates){
+					if(prefDate > eDateDayOfYear){
+						int tempDiff = prefDate - eDateDayOfYear;
+						if(tempDiff < minDiff){
+							minDiff = tempDiff;
+						}
+					}
+				}
+			}
 			
+			if(!preferedSpecificEvents.isEmpty()){
+				Set<Integer> keys = preferedSpecificEvents.keySet();
+				for(int prefDate:keys){
+					if(prefDate > eDateDayOfYear){
+						int tempDiff = prefDate - eDateDayOfYear;
+						if(tempDiff < minDiff){
+							minDiff = tempDiff;
+						}
+					}
+				}
+			}
+			
+			// if the person is in the preFreeze phase avoid selecting him
+			if(minDiff <= preFreeze){
+				ranking.put(wID, ranking.get(wID) + freezeForce);
+				System.out.println(w.getName() + ": " + e.getDate());
+				break;
+			}
+			
+			// event is still to far away -> preferred selection not necessary
+			else if(minDiff > 2 * preFreeze){
+				break;
+			}
+			
+			// selection gets more likely when the preFreeze phase approaches
+			else{
+				double cubed = Math.pow(minDiff, 3);
+				double natLog = Math.log(cubed);
+				int scoreDiff = (int) Math.round(natLog);
+				ranking.put(wID, ranking.get(wID) - scoreDiff);
+			}
 			
 			
 			
 		}
-		
-		
-		
-		
-		
-		
-		
 	}
 	
 	public int bestWorker(boolean shuffle){
@@ -151,7 +188,13 @@ public class RankingSelection {
 		return timeUnit.convert(diffInMillies, TimeUnit.MILLISECONDS);
 	}
 	
-	
+	private int calcDayOfYear(Date date){
+		int dateDdayOfYear = 0;
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		dateDdayOfYear = (cal.get(Calendar.DAY_OF_YEAR));
+		return dateDdayOfYear;
+	}
 	
 	
 	
