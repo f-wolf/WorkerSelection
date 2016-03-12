@@ -62,7 +62,6 @@ public class Reducor {
 			if (excludedWholeDates.contains(eDateDayOfYear)) {
 				kickList.add(selectionGroup.indexOf(w));
 				//System.out.println("kicked (date): " + w.getName());
-
 			}
 			
 			// worker does not work at this specific event

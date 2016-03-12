@@ -1,7 +1,9 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 
 public class RankingSelection {
@@ -55,9 +57,25 @@ public class RankingSelection {
 		}
 	}
 	
-	public void lastActiveRaking(double factor){
-		// - diff^2 * factor
-		System.err.println("funtion not created yet");
+	public void lastActiveRaking(){
+		/*
+		 * Calculates the natural logarithm of the cubed difference
+		 * This value is subtracted from the score and makes the selection more likely
+		 */
+		Date eDate = e.getDate();
+		
+		for(Worker w:workers){
+			int wID = w.getId();
+			Date lastActive = w.getLastDate();
+			long diff = getDateDiff(lastActive, eDate, TimeUnit.DAYS);
+			double cubed = Math.pow(diff, 3);
+			double natLog = Math.log(cubed);
+			int scoreDiff = (int) Math.round(natLog);
+			
+			ranking.put(wID, ranking.get(wID) - scoreDiff);
+		}
+		
+		
 	}
 	
 	public int bestWorker(boolean shuffle){
@@ -89,57 +107,14 @@ public class RankingSelection {
 	
 	
 	
-	/*
-	HashMap<Integer, Integer> ranking = new HashMap<>();
-	// put all workers into the hashmap with their count for initial
-	// ranking
-	for (Worker w : selectionGroup3) {
-		ranking.put(w.getId(), w.getCounter());
-	}
 
-	/*
-	 * Ranking algorithms
-	 */
-
-	/*
-	 * End of ranking algorithms
-	 
-
-	// select worker with lowest score
-	int nextWorkerID = 0;
-	Worker nextWorker = new Worker();
-	int lowestScore = Integer.MAX_VALUE;
-	for (Worker w : selectionGroup3) {
-		int score = ranking.get(w.getId());
-		if (score < lowestScore) {
-			lowestScore = score;
-			nextWorkerID = w.getId();
-			nextWorker = w;
-		}
-	}
-	// place nextworker onto the list
-
-	// System.out.println("nextWorker: " + nextWorkerID);
-	Worker w0 = nextWorker;
-	for (int j = 0; j < jobList.size(); j++) {
-		if (jobList.get(j) == taskID && control[j]) {
-			//System.out.println("placing worker with lowest score: "+ taskID + " j: " + j);
-			control[j] = false;
-			// System.out.println(Arrays.toString(output));
-			output[j] = w0.getName();
-			// System.out.println("Name: " + w0.getName());
-			//System.out.println(Arrays.toString(output));
-			workerList[j] = w0.getId();
-			// System.out.println(Arrays.toString(workerList));
-			foundWorker = true;
-			w0.addNewActivity(eDate, e.getId());
-			break;
-		}
-	}
-	*/
 	
 	
-	
+	private long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
+		// date1 is before date2
+		long diffInMillies = date2.getTime() - date1.getTime();
+		return timeUnit.convert(diffInMillies, TimeUnit.MILLISECONDS);
+	}
 	
 	
 	
