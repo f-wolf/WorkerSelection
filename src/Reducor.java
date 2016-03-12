@@ -30,6 +30,9 @@ public class Reducor {
 	}
 	
 	public ArrayList<Worker> reduceGroupDate(Event e, ArrayList<Worker> selectionGroup){
+		/*
+		 * Remove all workers who have excluded the event e from the list
+		 */
 		ArrayList<Worker> newGroup = new ArrayList<Worker>(); 
 		
 		// create kickList
@@ -44,11 +47,12 @@ public class Reducor {
 			//System.out.println(excludedEvents);
 			// data from event: event.date = date
 			int eventId = e.getId();
+			int overWrittenID = e.getOverWrittenID();
 			Date eDate = e.getDate();
 			int eDateDayOfYear = calcDayOfYear(eDate);
 			
 			// worker does not work at those events
-			if (excludedEvents.contains(eventId)) {
+			if (excludedEvents.contains(eventId) || excludedEvents.contains(overWrittenID)) {
 				//System.out.println("EventKick");
 				kickList.add(selectionGroup.indexOf(w));
 				//System.out.println("kicked (event): " + w.getName());
@@ -61,7 +65,7 @@ public class Reducor {
 
 			}
 			
-			// worker does not work at this specific date
+			// worker does not work at this specific event
 			if (excludedSpecificEvents.containsKey(eDateDayOfYear)) {
 				int excludedEventID = excludedSpecificEvents.get(eDateDayOfYear);
 				if (excludedEventID == eventId) {

@@ -6,6 +6,7 @@ public class Event {
 	
 	private String name;
 	private int id;
+	private int overWrittenID = -1;
 	private Date date;
 	private String comment;
 	private ArrayList<Integer> eventTasks = new ArrayList<Integer>();
@@ -52,6 +53,12 @@ public class Event {
 	}
 	public void setEventTasks(ArrayList<Integer> eventTasks) {
 		this.eventTasks = eventTasks;
+	}
+	public int getOverWrittenID() {
+		return overWrittenID;
+	}
+	public void setOverWrittenID(int overWrittenID) {
+		this.overWrittenID = overWrittenID;
 	}
 	
 }

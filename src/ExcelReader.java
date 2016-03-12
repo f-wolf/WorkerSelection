@@ -96,7 +96,8 @@ public class ExcelReader {
 
 		// # of regular events during the week
 		int countRegDays = Integer.parseInt(sheet0.getCell(1, 8).getContents());
-
+		
+		// add the regular events
 		for (int i = 0; i < countRegDays; i++) {
 			String weekday = sheet0.getCell(4 + i, 9).getContents();
 
@@ -224,7 +225,6 @@ public class ExcelReader {
 		}
 
 		// add the special events to the arrayList
-
 		int countSpecialEvents = Integer.parseInt(sheet0.getCell(1, 15).getContents());
 		for (int i = 0; i < countSpecialEvents; i++) {
 
@@ -296,6 +296,7 @@ public class ExcelReader {
 			for (Event aEvent : allEvents) {
 				if (aEvent.getDate().equals(theDate2)) {
 					deleteIndex = allEvents.indexOf(aEvent);
+					event1.setOverWrittenID(aEvent.getId());
 					break;
 				}
 			}
