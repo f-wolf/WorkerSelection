@@ -148,7 +148,7 @@ public class Run {
 				RankingSelection rSelect = new RankingSelection(e, selectionGroup5);
 				rSelect.counterRanking();
 				rSelect.eventRanking(impactOfPrefEvent);
-				//rSelect.lastActiveRaking(0.01);
+				rSelect.lastActiveRaking();
 				worker = rSelect.bestWorker(shuffle);
 				
 				//System.out.println("ranked0: " + Arrays.toString(workerList));
