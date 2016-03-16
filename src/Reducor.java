@@ -81,7 +81,7 @@ public class Reducor {
 		
 	}
 	
-	public ArrayList<Worker> reduceGroupWorksWithout(Date eDate, int [] workerList, ArrayList<Worker> selectionGroup){
+	public ArrayList<Worker> reduceGroupWorksWithout(Date eDate, int [] workerList, ArrayList<Worker> selectionGroup, int cooldown){
 		ArrayList<Worker> newGroup = new ArrayList<Worker>(); 
 		
 		//System.out.println("Current workerList: " + Arrays.toString(workerList));
@@ -99,7 +99,13 @@ public class Reducor {
 						// w2 is already working, so w is kicked out
 						//System.out.println("kick: " + w.getId());
 						kickList.add(selectionGroup.indexOf(w));
-						w.setLastDate(eDate);
+						
+						Calendar c1 = Calendar.getInstance();
+						c1.setTime(eDate);
+						c1.add(Calendar.DATE, -(cooldown - 4));
+						Date backDated = c1.getTime();
+						
+						w.setLastDate(backDated);
 						break;
 					}
 					
