@@ -7,9 +7,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import jxl.CellView;
+import jxl.DateCell;
 import jxl.Workbook;
 import jxl.write.Label;
 import jxl.write.WritableCell;
+import jxl.write.WritableCellFormat;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
@@ -45,6 +48,18 @@ public class ExcelWriter {
 			}
 
 		}
+		
+		// change width of columns 5 - 6
+		
+		int [] widthInCharacters = {3, 11, 12, 6, 17, 17, 17};
+		
+		for (int i = 0; i < 7; i++) {
+			CellView cv = sheet0.getColumnView(i);
+			cv.setSize(widthInCharacters[i] * 256); 
+			//cv.setAutosize(true);
+			sheet0.setColumnView(i, cv);
+		}
+		
 
 
 
@@ -57,20 +72,30 @@ public class ExcelWriter {
 		Label label = new Label(0, 0, "Name");
 		sheet1.addCell(label);
 		
+		Label label2 = new Label(0, 1, "last active");
+		sheet1.addCell(label2);
+		
 		// make the legend for all counters
 		int [] oneCounter = allWorkers.get(0).getCounter();
 		for(int c = 0; c < oneCounter.length; c++){
-			label = new Label(0, 1 + c, "counter " + c);
+			label = new Label(0, 2 + c, "counter " + c);
 			sheet1.addCell(label);
 		}
 		
-		// write every counter
+		// write all workers
 		for(int i = 0; i < allWorkers.size(); i++){
 			Label name = new Label(i + 1, 0, allWorkers.get(i).getName());
 			sheet1.addCell(name);
 			
+			// write last active date
+			Date lastActive = allWorkers.get(i).getLastDate();
+			WritableCellFormat format = new jxl.write.WritableCellFormat(new jxl.write.DateFormat("m/d/yyyy h:mm"));
+			WritableCell cell = new jxl.write.DateTime(i+1, 1, lastActive, format);
+			sheet1.addCell(cell);
+			
+			// write the counters
 			for(int c = 0; c < oneCounter.length; c++){
-				sheet1.addCell(new jxl.write.Number(i + 1, c + 1, allWorkers.get(i).getCounter()[c]));
+				sheet1.addCell(new jxl.write.Number(i + 1, c + 2, allWorkers.get(i).getCounter()[c]));
 			}
 			
 			// old solution
