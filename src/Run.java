@@ -142,7 +142,7 @@ public class Run {
 				
 
 				
-				
+				System.out.println(eDate + ": size of group: " + selectionGroup5.size());
 				
 				// find next worker with ranking
 				RankingSelection rSelect = new RankingSelection(e, selectionGroup5);

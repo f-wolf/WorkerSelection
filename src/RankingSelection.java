@@ -94,7 +94,10 @@ public class RankingSelection {
 		Date eDate = e.getDate();
 		int eDateDayOfYear = calcDayOfYear(eDate);
 
+		
 		for(Worker w:workers){
+			System.out.println(" ");
+			System.out.println("New worker: " + w.getName());
 			int wID = w.getId();
 			DatesCollection preferedDates = w.getPreferedDates();
 			ArrayList<Integer> preferedWholeDates = preferedDates.getWholeDates();
@@ -103,8 +106,10 @@ public class RankingSelection {
 			// determine smallest difference between current date and a future date
 			int minDiff = 1000;
 			if(!preferedWholeDates.isEmpty()){
+				System.out.println("has prefered whole dates");
 				for(int prefDate:preferedWholeDates){
 					if(prefDate > eDateDayOfYear){
+						System.out.println("lays in the future");
 						int tempDiff = prefDate - eDateDayOfYear;
 						if(tempDiff < minDiff){
 							minDiff = tempDiff;
@@ -114,9 +119,11 @@ public class RankingSelection {
 			}
 			
 			if(!preferedSpecificEvents.isEmpty()){
+				System.out.println("has prefered specific dates");
 				Set<Integer> keys = preferedSpecificEvents.keySet();
 				for(int prefDate:keys){
 					if(prefDate > eDateDayOfYear){
+						System.out.println("lays in the future");
 						int tempDiff = prefDate - eDateDayOfYear;
 						if(tempDiff < minDiff){
 							minDiff = tempDiff;
@@ -125,16 +132,18 @@ public class RankingSelection {
 				}
 			}
 			
+			System.out.println("calulated mindiff: " + minDiff);
+			
 			// if the person is in the preFreeze phase avoid selecting him
 			if(minDiff <= preFreeze){
 				ranking.put(wID, ranking.get(wID) + freezeForce);
-				System.out.println(w.getName() + ": " + e.getDate());
-				break;
+				System.out.println("Ranking, prefreeze: " + w.getName() + ": " + e.getDate());
+				continue;
 			}
 			
 			// event is still to far away -> preferred selection not necessary
 			else if(minDiff > 2 * preFreeze){
-				break;
+				continue;
 			}
 			
 			// selection gets more likely when the preFreeze phase approaches
