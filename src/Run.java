@@ -101,7 +101,7 @@ public class Run {
 				//System.out.println("size g2: " + selectionGroup2.size());
 				
 				// remove workers who don't want to work with somebody who is already on the list
-				ArrayList<Worker> selectionGroup3 = red0.reduceGroupWorksWithout(eDate, workerList, selectionGroup2);
+				ArrayList<Worker> selectionGroup3 = red0.reduceGroupWorksWithout(eDate, workerList, selectionGroup2, coolDownTime);
 				//System.out.println("size g3: " + selectionGroup3.size());
 				
 				// remove workers who are already on the list with the same task
