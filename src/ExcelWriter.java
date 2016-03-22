@@ -49,7 +49,7 @@ public class ExcelWriter {
 
 		}
 		
-		// change width of columns 5 - 6
+		// change width of columns
 		
 		int [] widthInCharacters = {3, 11, 12, 6, 17, 17, 17};
 		
