@@ -32,6 +32,7 @@ public class Run {
 		int biggestCounter = excelReader.getBiggestCounter(); // has to be after readEvents
 		allWorkers = excelReader.readWorkers(biggestCounter);
 		int coolDownTime = excelReader.readCoolDown();
+		System.out.println("The excel file is read");
 		
 		ArrayList<String[]> theOutput = new ArrayList<String[]>();
 		Analysor ana = new Analysor();

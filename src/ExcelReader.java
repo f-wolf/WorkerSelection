@@ -60,8 +60,7 @@ public class ExcelReader {
 
 			Task task1 = new Task();
 			task1.setName(sheet0.getCell(4 + i, 2).getContents());
-			task1.setId(Integer
-					.parseInt(sheet0.getCell(4 + i, 3).getContents()));
+			task1.setId(Integer.parseInt(sheet0.getCell(4 + i, 3).getContents()));
 			allTasks.add(task1);
 
 		}
@@ -81,7 +80,14 @@ public class ExcelReader {
 		// format.setTimeZone(gmtZone);
 
 		// get the exclusion dates
-		DatesCollection exclusionData = readDates(10, 0);
+		DatesCollection exclusionData = null;
+		try {
+			exclusionData = readDates(10, 0);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			System.err.println("Error reading the exclusion dates for the time range -> K1");
+			e.printStackTrace();
+		}
 		exclusionDates = exclusionData.getWholeDates();
 		System.out.println(exclusionDates);
 		exclusionMap = exclusionData.getSpecificEvents();
@@ -374,11 +380,25 @@ public class ExcelReader {
 			worker1.setExcludedEvents(excludedEvents);
 			
 			// prefered Dates
-			DatesCollection preferedDates = readDates(4+i, 27);
+			DatesCollection preferedDates = null;
+			try {
+				preferedDates = readDates(4+i, 27);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				System.err.println("Error reading the prefered dates for " + worker1.getName() + ", ID: " + worker1.getId());
+				e.printStackTrace();
+			}
 			worker1.setPreferedDates(preferedDates);
 			
 			// excluded Dates
-			DatesCollection excludedDates = readDates(4+i, 28);
+			DatesCollection excludedDates = null;
+			try {
+				excludedDates = readDates(4+i, 28);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				System.err.println("Error reading the excluded dates for " + worker1.getName() + ", ID: " + worker1.getId());
+				e.printStackTrace();
+			}
 			worker1.setExcludedDates(excludedDates);
 			
 			// works with and without
@@ -419,7 +439,7 @@ public class ExcelReader {
 		return allWorkers;
 	}
 	
-	public DatesCollection readDates(int col, int row){
+	public DatesCollection readDates(int col, int row) throws ParseException{
 		// takes the coordinates of the input zero based
 		// return the Dates of the Cell
 		
@@ -436,17 +456,17 @@ public class ExcelReader {
 			boolean singleDate = false;
 			ArrayList<String> stringDates = new ArrayList<String>();
 			if (temp1.contains(";")) {
-				// there are several elements to exclude
+				// there are several dates
 				stringDates = breakUpaString(temp1, ";");
 			} else {
-				// there is just one element to exclude
+				// there is just one date
 				stringDates.add(temp1);
 				singleDate = true;
 			}
 
 			for (String stringDate : stringDates) {
 				if (stringDate.contains("-")) {
-					// exclude a range
+					// a date range
 					ArrayList<String> range = new ArrayList<String>();
 					range = breakUpaString(stringDate, "-");
 
@@ -495,7 +515,7 @@ public class ExcelReader {
 					}
 
 				} else {
-					// String contains "|" => exclude a specific event
+					// String contains "|" => a specific event
 
 					ArrayList<String> splits = new ArrayList<String>();
 					splits = breakUpaString(stringDate, "|");
@@ -523,7 +543,7 @@ public class ExcelReader {
 	
 	
 
-	private Date extractDateFromString(String s) {
+	private Date extractDateFromString(String s) throws ParseException {
 		// returns a date from a String
 		//System.out.println("coo coo :" + s);
 		// clean the string
@@ -539,14 +559,8 @@ public class ExcelReader {
 		SimpleDateFormat format3 = new SimpleDateFormat("dd.MM.yyyy");
 		// https://stackoverflow.com/questions/4216745/java-string-to-date-conversion
 		Date date = new Date();
-		try {
-			date = format3.parse(s2);
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			System.err.println("ExcelReader: extraction of a Date failed");
-		}
-
+		date = format3.parse(s2);
+		
 		return date;
 	}
 
