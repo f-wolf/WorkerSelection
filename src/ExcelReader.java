@@ -529,7 +529,7 @@ public class ExcelReader {
 		// clean the string
 		String s2 = "";
 		if (s.contains(" ")) {
-			System.out.println("Date extraction from string: string cleaning");
+			//System.out.println("Date extraction from string: string cleaning");
 			s2 = s.replace(" ", "");
 		} 
 		else{
