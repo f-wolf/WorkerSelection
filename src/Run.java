@@ -28,9 +28,12 @@ public class Run {
 		// read excel file
 		ExcelReader excelReader = new ExcelReader(inputPath);
 		allTasks = excelReader.readTasks();
+		System.out.println("Tasks are read");
 		allEvents = excelReader.readEvents();
+		System.out.println("Events are read");
 		int biggestCounter = excelReader.getBiggestCounter(); // has to be after readEvents
 		allWorkers = excelReader.readWorkers(biggestCounter);
+		System.out.println("Workers are read");
 		int coolDownTime = excelReader.readCoolDown();
 		System.out.println("The excel file is read");
 		
@@ -43,7 +46,7 @@ public class Run {
 		
 		// create legend and add to output
 		String [] legend = ana.createLegend(jobList, allTasks, columnsWithText);
-		System.out.println(Arrays.toString(legend));
+		//System.out.println(Arrays.toString(legend));
 		theOutput.add(legend);
 		
 		// calculate the week of year for the first event
@@ -143,7 +146,7 @@ public class Run {
 				
 
 				
-				System.out.println(eDate + ": size of group: " + selectionGroup5.size());
+				//System.out.println(eDate + ": size of group: " + selectionGroup5.size());
 				
 				// find next worker with ranking
 				RankingSelection rSelect = new RankingSelection(e, selectionGroup5);

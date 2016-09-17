@@ -25,6 +25,9 @@ public class ExcelReader {
 	DateFormat format;
 	WorkbookSettings newSetting;
 	int biggestCounter;
+	
+	private Date rangeStart = null;
+	private Date rangeEnd = null;
 
 	public ExcelReader(String path) {
 		this.path = path;
@@ -89,15 +92,15 @@ public class ExcelReader {
 			e.printStackTrace();
 		}
 		exclusionDates = exclusionData.getWholeDates();
-		System.out.println(exclusionDates);
+		//System.out.println(exclusionDates);
 		exclusionMap = exclusionData.getSpecificEvents();
 		
 		// put regular events into arrayList (without the exclusion dates)
 		// get the range
-		Date rangeStart = ((DateCell) sheet0.getCell(4, 0)).getDate();
-		System.out.println(rangeStart);
-		Date rangeEnd = ((DateCell) sheet0.getCell(7, 0)).getDate();
-		System.out.println(rangeEnd);
+		rangeStart = ((DateCell) sheet0.getCell(4, 0)).getDate();
+		//System.out.println(rangeStart);
+		rangeEnd = ((DateCell) sheet0.getCell(7, 0)).getDate();
+		//System.out.println(rangeEnd);
 		//System.out.println("Time diff: " + getDateDiff(rangeStart, rangeEnd, TimeUnit.DAYS));
 
 		// # of regular events during the week
@@ -379,7 +382,7 @@ public class ExcelReader {
 			}
 			worker1.setExcludedEvents(excludedEvents);
 			
-			// prefered Dates
+			// preferred Dates
 			DatesCollection preferedDates = null;
 			try {
 				preferedDates = readDates(4+i, 27);
@@ -560,6 +563,12 @@ public class ExcelReader {
 		// https://stackoverflow.com/questions/4216745/java-string-to-date-conversion
 		Date date = new Date();
 		date = format3.parse(s2);
+		
+		// test if the date is inside the time frame
+		if (rangeStart != null && rangeEnd != null && (date.before(rangeStart) || date.after(rangeEnd))){
+			System.err.println("WARNING: date outside of specified date range: " + s);
+		}
+		
 		
 		return date;
 	}
