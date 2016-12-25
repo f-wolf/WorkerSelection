@@ -119,11 +119,16 @@ public class ExcelReader {
 			String currentWeekday = format2.format(runner);
 
 			// find the first date of the current weekday
+			int catchStuckinLoopCounter = 0;
 			while (!(currentWeekday.toLowerCase()).equals(weekday.toLowerCase())) {
 				c.add(Calendar.DATE, 1);
 				runner = c.getTime();
 				c.setTime(runner);
 				currentWeekday = format2.format(runner);
+				catchStuckinLoopCounter++;
+				if(catchStuckinLoopCounter > 8){
+					System.err.println("ExcelReader, ReadEvents: Stuck in while-loop. Language difference between system and input file?");
+				}
 			}
 			
 			// one day has to be added; don't know why
@@ -360,6 +365,23 @@ public class ExcelReader {
 				if(s.isEmpty()){
 					preferedEvents.add(-1);
 				}
+				else if(s.contains("-")){
+					ArrayList<String> prefEventRange = breakUpaString(s, "-");
+					if(prefEventRange.size() == 2) {
+						int prefEventRangeStart = Integer.parseInt(prefEventRange.get(0));
+						int prefEventRangeEnd = Integer.parseInt(prefEventRange.get(1));
+						if(prefEventRangeStart > prefEventRangeEnd){
+							System.err.println("Preferred ID range start is bigger than end -> this will result in an error");
+						}
+						while (prefEventRangeStart <= prefEventRangeEnd){
+							preferedEvents.add(prefEventRangeStart);
+							prefEventRangeStart++;
+						}
+					}
+					else{
+						System.err.println(worker1.getName() + ": Found a separator in preferred EventIds, but not 2 numbers");
+					}
+				}
 				else{
 					preferedEvents.add(Integer.parseInt(s));
 				}
@@ -375,6 +397,23 @@ public class ExcelReader {
 				// System.out.println(s);
 				if(s.isEmpty()){
 					excludedEvents.add(-1);
+				}
+				else if(s.contains("-")){
+					ArrayList<String> excluEventRange = breakUpaString(s, "-");
+					if(excluEventRange.size() == 2) {
+						int excluEventRangeStart = Integer.parseInt(excluEventRange.get(0));
+						int excluEventRangeEnd = Integer.parseInt(excluEventRange.get(1));
+						if(excluEventRangeStart > excluEventRangeEnd){
+							System.err.println("Excluded ID range start is bigger than end -> this will result in an error");
+						}
+						while (excluEventRangeStart <= excluEventRangeEnd){
+							excludedEvents.add(excluEventRangeStart);
+							excluEventRangeStart++;
+						}
+					}
+					else{
+						System.err.println(worker1.getName() + ": Found a separator in excluded EventIds, but not 2 numbers");
+					}
 				}
 				else{
 					excludedEvents.add(Integer.parseInt(s));
