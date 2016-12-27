@@ -21,7 +21,9 @@ public class ExcelReader {
 
 	String path;
 	Workbook workbook;
-	Sheet sheet0;
+	Sheet sheet_general;
+	Sheet sheet_events;
+	Sheet sheet_workers;
 	DateFormat format;
 	WorkbookSettings newSetting;
 	int biggestCounter;
@@ -34,7 +36,9 @@ public class ExcelReader {
 
 		try {
 			workbook = Workbook.getWorkbook(new File(path));
-			sheet0 = workbook.getSheet(0);
+			sheet_general = workbook.getSheet(0);
+			sheet_events = workbook.getSheet(1);
+			sheet_workers = workbook.getSheet(2);
 		} catch (BiffException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -58,12 +62,12 @@ public class ExcelReader {
 	public ArrayList<Task> readTasks() {
 		// puts all Task into an ArrayList
 		ArrayList<Task> allTasks = new ArrayList<Task>();
-		int countTasks = Integer.parseInt(sheet0.getCell(1, 3).getContents());
+		int countTasks = Integer.parseInt(sheet_general.getCell(1, 5).getContents());
 		for (int i = 0; i < countTasks; i++) {
 
 			Task task1 = new Task();
-			task1.setName(sheet0.getCell(4 + i, 2).getContents());
-			task1.setId(Integer.parseInt(sheet0.getCell(4 + i, 3).getContents()));
+			task1.setName(sheet_general.getCell(4 + i, 4).getContents());
+			task1.setId(Integer.parseInt(sheet_general.getCell(4 + i, 5).getContents()));
 			allTasks.add(task1);
 
 		}
@@ -85,7 +89,7 @@ public class ExcelReader {
 		// get the exclusion dates
 		DatesCollection exclusionData = null;
 		try {
-			exclusionData = readDates(10, 0);
+			exclusionData = readDates(sheet_general,4, 18);
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			System.err.println("Error reading the exclusion dates for the time range -> K1");
@@ -97,18 +101,18 @@ public class ExcelReader {
 		
 		// put regular events into arrayList (without the exclusion dates)
 		// get the range
-		rangeStart = ((DateCell) sheet0.getCell(4, 0)).getDate();
+		rangeStart = ((DateCell) sheet_general.getCell(4, 0)).getDate();
 		//System.out.println(rangeStart);
-		rangeEnd = ((DateCell) sheet0.getCell(7, 0)).getDate();
+		rangeEnd = ((DateCell) sheet_general.getCell(4, 1)).getDate();
 		//System.out.println(rangeEnd);
 		//System.out.println("Time diff: " + getDateDiff(rangeStart, rangeEnd, TimeUnit.DAYS));
 
 		// # of regular events during the week
-		int countRegDays = Integer.parseInt(sheet0.getCell(1, 8).getContents());
+		int countRegDays = Integer.parseInt(sheet_general.getCell(1, 10).getContents());
 		
 		// add the regular events
 		for (int i = 0; i < countRegDays; i++) {
-			String weekday = sheet0.getCell(4 + i, 9).getContents();
+			String weekday = sheet_general.getCell(4 + i, 11).getContents();
 
 			Calendar c = Calendar.getInstance();
 			DateFormat format2 = new SimpleDateFormat("EEEE");
@@ -152,7 +156,7 @@ public class ExcelReader {
 				}
 
 				// special exclusion?
-				int id = Integer.parseInt(sheet0.getCell(4 + i, 8).getContents());
+				int id = Integer.parseInt(sheet_general.getCell(4 + i, 10).getContents());
 				
 				if (exclusionMap.containsKey(runnerDayOfYear)) {
 					if (exclusionMap.get(runnerDayOfYear) == id) {
@@ -165,13 +169,13 @@ public class ExcelReader {
 				// System.out.println("runner: " + runner);
 				// create event and add to allEvents
 				Event event0 = new Event();
-				event0.setName(sheet0.getCell(4 + i, 7).getContents());
+				event0.setName(sheet_general.getCell(4 + i, 9).getContents());
 				event0.setId(id);
 
 				// get date and time
 				// get start time in hours and minutes
 				TimeZone tz = TimeZone.getTimeZone("CEST");
-				Date time = ((DateCell) sheet0.getCell(4 + i, 10)).getDate();
+				Date time = ((DateCell) sheet_general.getCell(4 + i, 12)).getDate();
 				Calendar t = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
 				t.setTimeZone(tz);
 				t.setTime(time);
@@ -196,10 +200,10 @@ public class ExcelReader {
 				//System.out.println(format.format(theDate));
 				event0.setDate(theDate);
 
-				event0.setComment(sheet0.getCell(4 + i, 11).getContents());
+				event0.setComment(sheet_general.getCell(4 + i, 13).getContents());
 
 				// extract tasks for event
-				String tasksString = sheet0.getCell(4 + i, 12).getContents();
+				String tasksString = sheet_general.getCell(4 + i, 14).getContents();
 				ArrayList<String> tasksStringList = breakUpaString(tasksString, ";");
 				ArrayList<Integer> eventTasks = new ArrayList<Integer>();
 
@@ -212,7 +216,7 @@ public class ExcelReader {
 				event0.setEventTasks(eventTasks);
 				
 				// extract counters for event
-				String countersString = sheet0.getCell(4 + i, 13).getContents();
+				String countersString = sheet_general.getCell(4 + i, 15).getContents();
 				ArrayList<String> countersStringList = breakUpaString(countersString, ";");
 				ArrayList<Integer> eventCounters = new ArrayList<Integer>();
 
@@ -239,16 +243,17 @@ public class ExcelReader {
 		}
 
 		// add the special events to the arrayList
-		int countSpecialEvents = Integer.parseInt(sheet0.getCell(1, 15).getContents());
+		int countSpecialEvents = Integer.parseInt(sheet_general.getCell(1, 23).getContents());
 		for (int i = 0; i < countSpecialEvents; i++) {
 
 			Event event1 = new Event();
-			event1.setName(sheet0.getCell(4 + i, 14).getContents());
-			event1.setId(Integer.parseInt(sheet0.getCell(4 + i, 15).getContents()));
+			event1.setName(sheet_events.getCell(1, 1 + i).getContents());
+			event1.setId(Integer.parseInt(sheet_events.getCell(2, 1 + i).getContents()));
+			System.out.println("event: " + event1.getName());
 
 			// get date and time
 			// get start time in hours and minutes
-			Date time2 = ((DateCell) sheet0.getCell(4 + i, 17)).getDate();
+			Date time2 = ((DateCell) sheet_events.getCell(4, 1 + i)).getDate();
 			Calendar t2 = Calendar.getInstance(TimeZone.getTimeZone("CEST")); // Timezone
 																				// ...
 																				// is
@@ -258,7 +263,7 @@ public class ExcelReader {
 
 			// System.out.println(time);
 			Calendar cFinal2 = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
-			Date date2 = ((DateCell) sheet0.getCell(4 + i, 16)).getDate();
+			Date date2 = ((DateCell) sheet_events.getCell(3, 1 + i)).getDate();
 
 			// System.out.println("date2: " + date2);
 			cFinal2.setTime(date2);
@@ -272,9 +277,9 @@ public class ExcelReader {
 			// System.out.println(format.format(theDate2));
 			event1.setDate(theDate2);
 
-			event1.setComment(sheet0.getCell(4 + i, 18).getContents());
+			event1.setComment(sheet_events.getCell(5, 1 + i).getContents());
 			// extract tasks for event
-			String tasksString = sheet0.getCell(4 + i, 19).getContents();
+			String tasksString = sheet_events.getCell(6, 1 + i).getContents();
 			ArrayList<String> tasksStringList = breakUpaString(tasksString, ";");
 			ArrayList<Integer> eventTasks = new ArrayList<Integer>();
 			//System.out.println(event1.getId() + ": " + tasksString);
@@ -288,7 +293,7 @@ public class ExcelReader {
 			event1.setEventTasks(eventTasks);
 			
 			// extract counters for event
-			String countersString = sheet0.getCell(4 + i, 20).getContents();
+			String countersString = sheet_events.getCell(7, 1 + i).getContents();
 			ArrayList<String> countersStringList = breakUpaString(countersString, ";");
 			ArrayList<Integer> eventCounters = new ArrayList<Integer>();
 			
@@ -336,15 +341,16 @@ public class ExcelReader {
 		// read the information for the workers and put them into the arrayList
 		ArrayList<Worker> allWorkers = new ArrayList<Worker>();
 		
-		int workersCount = Integer.parseInt(sheet0.getCell(1, 23).getContents());
+		int workersCount = Integer.parseInt(sheet_general.getCell(1, 31).getContents());
 		for (int i = 0; i < workersCount; i++) {
 			
 			Worker worker1 = new Worker();
-			worker1.setName(sheet0.getCell(4+i, 22).getContents());
-			worker1.setId(Integer.parseInt(sheet0.getCell(4+i, 23).getContents()));
+			worker1.setName(sheet_workers.getCell(1, 1 + i).getContents());
+			worker1.setId(Integer.parseInt(sheet_workers.getCell(2, 1 + i).getContents()));
+			System.out.println("worker: " + worker1.getName());
 			
 			// extract tasks for worker
-			String tasksString = sheet0.getCell(4 + i, 24).getContents();
+			String tasksString = sheet_workers.getCell(3, 1 + i).getContents();
 			ArrayList<String> tasksStringList = breakUpaString(tasksString, ";");
 			ArrayList<Integer> possibleTasks = new ArrayList<Integer>();
 
@@ -356,7 +362,7 @@ public class ExcelReader {
 			worker1.setPossibleTasks(possibleTasks);
 			
 			// prefered Events
-			String prefEventsString = sheet0.getCell(4 + i, 25).getContents();
+			String prefEventsString = sheet_workers.getCell(4, 1 + i).getContents();
 			ArrayList<String> prefEventsStringList = breakUpaString(prefEventsString, ";");
 			ArrayList<Integer> preferedEvents = new ArrayList<Integer>();
 			
@@ -389,7 +395,7 @@ public class ExcelReader {
 			worker1.setPreferedEvents(preferedEvents);
 			
 			// excluded Events
-			String excludedEventsString = sheet0.getCell(4 + i, 26).getContents();
+			String excludedEventsString = sheet_workers.getCell(5, 1 + i ).getContents();
 			ArrayList<String> excludedEventsStringList = breakUpaString(excludedEventsString, ";");
 			ArrayList<Integer> excludedEvents = new ArrayList<Integer>();
 
@@ -424,7 +430,7 @@ public class ExcelReader {
 			// preferred Dates
 			DatesCollection preferedDates = null;
 			try {
-				preferedDates = readDates(4+i, 27);
+				preferedDates = readDates(sheet_workers, 6, 1 + i);
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				System.err.println("Error reading the prefered dates for " + worker1.getName() + ", ID: " + worker1.getId());
@@ -435,7 +441,7 @@ public class ExcelReader {
 			// excluded Dates
 			DatesCollection excludedDates = null;
 			try {
-				excludedDates = readDates(4+i, 28);
+				excludedDates = readDates(sheet_workers, 7, 1 + i);
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				System.err.println("Error reading the excluded dates for " + worker1.getName() + ", ID: " + worker1.getId());
@@ -444,11 +450,11 @@ public class ExcelReader {
 			worker1.setExcludedDates(excludedDates);
 			
 			// works with and without
-			String worksWith = sheet0.getCell(4 + i, 29).getContents();
+			String worksWith = sheet_workers.getCell(8,  1 + i).getContents();
 			if(!worksWith.isEmpty()){
 				worker1.setWorksWith(Integer.parseInt(worksWith));
 			}
-			String worksWithout = sheet0.getCell(4 + i, 30).getContents();
+			String worksWithout = sheet_workers.getCell(9, 1 + i ).getContents();
 			if(!worksWithout.isEmpty()){
 				worker1.setWorksWithout(Integer.parseInt(worksWithout));
 			}
@@ -458,7 +464,7 @@ public class ExcelReader {
 			Arrays.fill(counter, 0);
 			
 			// read counter
-			String counterString = sheet0.getCell(4 + i, 31).getContents();
+			String counterString = sheet_workers.getCell(10, 1 + i).getContents();
 			if(!counterString.isEmpty()){
 				counter[0] = Integer.parseInt(counterString);
 				worker1.setCounter(counter);
@@ -469,7 +475,7 @@ public class ExcelReader {
 			}
 			
 			// read last date
-			Date lastDate = ((DateCell) sheet0.getCell(4 + i, 32)).getDate();
+			Date lastDate = ((DateCell) sheet_workers.getCell(11, 1 + i)).getDate();
 			worker1.setLastDate(lastDate);
 			
 			allWorkers.add(worker1);
@@ -481,7 +487,7 @@ public class ExcelReader {
 		return allWorkers;
 	}
 	
-	public DatesCollection readDates(int col, int row) throws ParseException{
+	public DatesCollection readDates(Sheet sheet0, int col, int row) throws ParseException{
 		// takes the coordinates of the input zero based
 		// return the Dates of the Cell
 		
@@ -647,7 +653,7 @@ public class ExcelReader {
 	}
 
 	public int readCoolDown() {
-		String coolDownString = sheet0.getCell(10, 1).getContents();
+		String coolDownString = sheet_general.getCell(4, 20).getContents();
 		int coolDown = Integer.parseInt(coolDownString);
 		return coolDown;
 	}
