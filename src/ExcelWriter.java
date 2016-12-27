@@ -72,30 +72,30 @@ public class ExcelWriter {
 		Label label = new Label(0, 0, "Name");
 		sheet1.addCell(label);
 		
-		Label label2 = new Label(0, 1, "last active");
+		Label label2 = new Label(1, 0, "last active");
 		sheet1.addCell(label2);
 		
 		// make the legend for all counters
 		int [] oneCounter = allWorkers.get(0).getCounter();
 		for(int c = 0; c < oneCounter.length; c++){
-			label = new Label(0, 2 + c, "counter " + c);
+			label = new Label(2 + c, 0,  "counter " + c);
 			sheet1.addCell(label);
 		}
 		
 		// write all workers
 		for(int i = 0; i < allWorkers.size(); i++){
-			Label name = new Label(i + 1, 0, allWorkers.get(i).getName());
+			Label name = new Label(0, i + 1, allWorkers.get(i).getName());
 			sheet1.addCell(name);
 			
 			// write last active date
 			Date lastActive = allWorkers.get(i).getLastDate();
 			WritableCellFormat format = new jxl.write.WritableCellFormat(new jxl.write.DateFormat("m/d/yyyy h:mm"));
-			WritableCell cell = new jxl.write.DateTime(i+1, 1, lastActive, format);
+			WritableCell cell = new jxl.write.DateTime(1, i+1, lastActive, format);
 			sheet1.addCell(cell);
 			
 			// write the counters
 			for(int c = 0; c < oneCounter.length; c++){
-				sheet1.addCell(new jxl.write.Number(i + 1, c + 2, allWorkers.get(i).getCounter()[c]));
+				sheet1.addCell(new jxl.write.Number(c + 2, i + 1, allWorkers.get(i).getCounter()[c]));
 			}
 			
 			// old solution
