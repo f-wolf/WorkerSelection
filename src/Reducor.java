@@ -52,7 +52,8 @@ public class Reducor {
 			int eDateDayOfYear = calcDayOfYear(eDate);
 			
 			// worker does not work at those events
-			if (excludedEvents.contains(eventId) || excludedEvents.contains(overWrittenID)) {
+			//if (excludedEvents.contains(eventId) || excludedEvents.contains(overWrittenID)) {
+			if (excludedEvents.contains(eventId)) {
 				//System.out.println("EventKick");
 				kickList.add(selectionGroup.indexOf(w));
 				//System.out.println("kicked (event): " + w.getName());
