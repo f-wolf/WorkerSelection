@@ -442,6 +442,7 @@ public class ExcelReader {
 			DatesCollection excludedDates = null;
 			try {
 				excludedDates = readDates(sheet_workers, 7, 1 + i);
+				//System.out.println("exdates of " + worker1.getName() + ": " + excludedDates.getWholeDates().toString());
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				System.err.println("Error reading the excluded dates for " + worker1.getName() + ", ID: " + worker1.getId());
@@ -513,8 +514,11 @@ public class ExcelReader {
 			}
 
 			for (String stringDate : stringDates) {
-				if (stringDate.contains("-")) {
+				if (stringDate.contains("-") || stringDate.contains("–")) {
 					// a date range
+
+					stringDate = stringDate.replaceAll("–", "-");
+
 					ArrayList<String> range = new ArrayList<String>();
 					range = breakUpaString(stringDate, "-");
 
