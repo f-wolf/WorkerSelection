@@ -4,4 +4,6 @@ bin/
 .idea/
 .settings/
 WorkerSelection.iml
-
+*output.xls
+jxl.jar
+archive/
