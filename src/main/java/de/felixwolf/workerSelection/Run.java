@@ -1,19 +1,23 @@
+package de.felixwolf.workerSelection;
+
 import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import jxl.write.WriteException;
-import jxl.write.biff.RowsExceededException;
+import de.felixwolf.workerSelection.excelIO.*;
+import de.felixwolf.workerSelection.dataTypes.*;
+import de.felixwolf.workerSelection.selection.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Run {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(Run.class);
+
+
 	public static void main(String[] args) {
 
 		String inputPath = "input.xls";
@@ -28,6 +32,7 @@ public class Run {
 		// read excel file
 		ExcelReader excelReader = new ExcelReader(inputPath);
 		allTasks = excelReader.readTasks();
+		LOGGER.info("All tasks are read");
 		System.out.println("Tasks are read");
 		allEvents = excelReader.readEvents();
 		System.out.println("Events are read");
@@ -91,7 +96,7 @@ public class Run {
 			for (int taskID : e.getEventTasks()) {
 				// System.out.println(" ");
 				
-				//System.out.println("new Task: " + taskID);
+				//System.out.println("new main.java.de.felixwolf.workerSelection.dataTypes.Task: " + taskID);
 				int worker = -1;
 				
 				ArrayList<Worker> selectionGroup0 = allWorkers;

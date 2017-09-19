@@ -1,3 +1,5 @@
+package de.felixwolf.workerSelection.dataTypes;
+
 import java.util.ArrayList;
 import java.util.Date;
 

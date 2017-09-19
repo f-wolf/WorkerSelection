@@ -1,3 +1,7 @@
+package de.felixwolf.workerSelection.selection;
+
+import de.felixwolf.workerSelection.dataTypes.*;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;

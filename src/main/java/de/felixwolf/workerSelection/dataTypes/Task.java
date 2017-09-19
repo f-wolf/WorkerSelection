@@ -1,3 +1,4 @@
+package de.felixwolf.workerSelection.dataTypes;
 
 public class Task {
 	

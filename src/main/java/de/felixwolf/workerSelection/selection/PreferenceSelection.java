@@ -1,8 +1,11 @@
+package de.felixwolf.workerSelection.selection;
+
+import de.felixwolf.workerSelection.dataTypes.*;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
 
 
 public class PreferenceSelection {
@@ -94,11 +97,11 @@ public class PreferenceSelection {
 }
 
 /*
-for (Worker w : selectionGroup3) {
+for (main.java.de.felixwolf.workerSelection.dataTypes.Worker w : selectionGroup3) {
 
 	// Does the worker prefer the date?
 	// get data from worker
-	DatesCollection preferedDates = w.getPreferedDates();
+	main.java.de.felixwolf.workerSelection.dataTypes.DatesCollection preferedDates = w.getPreferedDates();
 	HashMap<Date, Integer> preferedSpecificEvents = preferedDates
 			.getSpecificEvents();
 	ArrayList<Date> preferedWholeDates = preferedDates

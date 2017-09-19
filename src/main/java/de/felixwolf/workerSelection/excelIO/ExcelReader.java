@@ -1,3 +1,5 @@
+package de.felixwolf.workerSelection.excelIO;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -16,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 import jxl.*;
 import jxl.read.biff.BiffException;
+import de.felixwolf.workerSelection.dataTypes.*;
 
 public class ExcelReader {
 
@@ -60,7 +63,7 @@ public class ExcelReader {
 	}
 
 	public ArrayList<Task> readTasks() {
-		// puts all Task into an ArrayList
+		// puts all main.java.de.felixwolf.workerSelection.dataTypes.Task into an ArrayList
 		ArrayList<Task> allTasks = new ArrayList<Task>();
 		int countTasks = Integer.parseInt(sheet_general.getCell(1, 5).getContents());
 		for (int i = 0; i < countTasks; i++) {
@@ -131,7 +134,7 @@ public class ExcelReader {
 				currentWeekday = format2.format(runner);
 				catchStuckinLoopCounter++;
 				if(catchStuckinLoopCounter > 8){
-					System.err.println("ExcelReader, ReadEvents: Stuck in while-loop. Language difference between system and input file?");
+					System.err.println("main.java.de.felixwolf.workerSelection.excelIO.ExcelReader, ReadEvents: Stuck in while-loop. Language difference between system and input file?");
 				}
 			}
 			
@@ -310,7 +313,7 @@ public class ExcelReader {
 			event1.setActiveCounters(eventCounters);
 			
 
-			// check if a regular Event is at the same time
+			// check if a regular main.java.de.felixwolf.workerSelection.dataTypes.Event is at the same time
 			int deleteIndex = -1;
 			for (Event aEvent : allEvents) {
 				if (aEvent.getDate().equals(theDate2)) {

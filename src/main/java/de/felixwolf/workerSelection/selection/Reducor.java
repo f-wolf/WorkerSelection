@@ -1,12 +1,11 @@
-import java.sql.Time;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+package de.felixwolf.workerSelection.selection;
+
+import de.felixwolf.workerSelection.dataTypes.*;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 
@@ -214,7 +213,7 @@ public class Reducor {
 	/*
 	 * // remove workers who are in the coolDownPeriode
 	 * ArrayList<Integer> kickList2 = new ArrayList<Integer>();
-	 * for(Worker w:selectionGroup2){
+	 * for(main.java.de.felixwolf.workerSelection.dataTypes.Worker w:selectionGroup2){
 	 * 
 	 * // was active in the last x days Date lastActive =
 	 * w.getLastDate();
@@ -223,8 +222,8 @@ public class Reducor {
 	 * date, TimeUnit.DAYS); if(diff > coolDownTime){
 	 * kickList2.add(selectionGroup1.indexOf(w)); } } }
 	 * 
-	 * // kicking ArrayList<Worker> selectionGroup3 = new
-	 * ArrayList<Worker>(); for(int wi = 0; wi <
+	 * // kicking ArrayList<main.java.de.felixwolf.workerSelection.dataTypes.Worker> selectionGroup3 = new
+	 * ArrayList<main.java.de.felixwolf.workerSelection.dataTypes.Worker>(); for(int wi = 0; wi <
 	 * selectionGroup2.size(); wi++){ if(!kickList2.contains(wi)){
 	 * selectionGroup3.add(selectionGroup2.get(wi)); } }
 	 */

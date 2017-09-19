@@ -1,14 +1,13 @@
+package de.felixwolf.workerSelection.excelIO;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import jxl.CellView;
-import jxl.DateCell;
 import jxl.Workbook;
 import jxl.write.Label;
 import jxl.write.WritableCell;
@@ -17,6 +16,8 @@ import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
 import jxl.write.biff.RowsExceededException;
+
+import de.felixwolf.workerSelection.dataTypes.*;
 
 public class ExcelWriter {
 
@@ -123,8 +124,8 @@ public class ExcelWriter {
 	 * int currentRow = 1;
 	 * 
 	 * theCalendar = aCalendar.getTheCalendar(); sortedCalendar =
-	 * aCalendar.getSortedCalendar(); Map<Integer, Worker> selectedWorkers = new
-	 * HashMap<Integer, Worker>(); // reihenfolge // der // Tasks
+	 * aCalendar.getSortedCalendar(); Map<Integer, main.java.de.felixwolf.workerSelection.dataTypes.Worker> selectedWorkers = new
+	 * HashMap<Integer, main.java.de.felixwolf.workerSelection.dataTypes.Worker>(); // reihenfolge // der // Tasks
 	 * 
 	 * // make new Excelfile
 	 * 
@@ -153,9 +154,9 @@ public class ExcelWriter {
 	 * "ExcelMaster:WriteExcel: soviele Arbeiter sind asugew�hlt: " // +
 	 * sortedWorkers.size());
 	 * 
-	 * for (int b = 0; b < sortedWorkers.size(); b++) { Worker w1 =
+	 * for (int b = 0; b < sortedWorkers.size(); b++) { main.java.de.felixwolf.workerSelection.dataTypes.Worker w1 =
 	 * sortedWorkers.get(b); //
-	 * System.out.println("ExcelMaster:WriteExcel: Name of Worker: " // +
+	 * System.out.println("ExcelMaster:WriteExcel: Name of main.java.de.felixwolf.workerSelection.dataTypes.Worker: " // +
 	 * w1.getName() + " b: " + b + " Size: " + // selectedWorkers.size()); Label
 	 * labelWorker = new Label(1 + b, currentRow, w1.getName());
 	 * sheet0.addCell(labelWorker); }
