@@ -12,24 +12,38 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
-import jxl.*;
-import jxl.read.biff.BiffException;
 import de.felixwolf.workerSelection.dataTypes.*;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExcelReader {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(ExcelReader.class);
+
 	String path;
 	Workbook workbook;
-	Sheet sheet_general;
+
+	private Sheet sheet_tasks;
+	private Sheet sheet_period;
+	private Sheet sheet_regEvents;
+	private Sheet sheet_specEvents;
+	private Sheet sheet_workers;
+	private Sheet sheet_settings;
+
 	Sheet sheet_events;
-	Sheet sheet_workers;
 	DateFormat format;
-	WorkbookSettings newSetting;
-	int biggestCounter;
+	DateFormat justDateformat = new SimpleDateFormat("dd.MM.yyyy");
+
+	//WorkbookSettings newSetting; //todo ?
+	private int biggestCounter;
 	
 	private Date rangeStart = null;
 	private Date rangeEnd = null;
@@ -38,11 +52,27 @@ public class ExcelReader {
 		this.path = path;
 
 		try {
-			workbook = Workbook.getWorkbook(new File(path));
-			sheet_general = workbook.getSheet(0);
-			sheet_events = workbook.getSheet(1);
-			sheet_workers = workbook.getSheet(2);
-		} catch (BiffException e) {
+
+			if(isXLSX(path)){
+				workbook = new XSSFWorkbook(new File(path));
+			}
+			else {
+				workbook = new HSSFWorkbook(POIFSFileSystem.create(new File(path)));
+			}
+
+			//Workbook.getWorkbook(new File(path));
+
+			sheet_tasks = workbook.getSheet("Tasks");
+			sheet_period = workbook.getSheet("Period");
+			sheet_regEvents = workbook.getSheet("RegularEvents");
+			sheet_specEvents = workbook.getSheet("SpecialEvents");
+			sheet_workers = workbook.getSheet("Workers");
+			sheet_settings = workbook.getSheet("Settings");
+
+
+
+			sheet_events = workbook.getSheetAt(1);
+		} catch (InvalidFormatException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -50,72 +80,227 @@ public class ExcelReader {
 			e.printStackTrace();
 		}
 
-		TimeZone gmtZone = TimeZone.getTimeZone("GMT");
+		TimeZone gmtZone = TimeZone.getTimeZone("CEST");
 		format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 		format.setTimeZone(gmtZone);
-		
+		justDateformat.setTimeZone(gmtZone);
+
+		/*
 		newSetting = new WorkbookSettings();
 		Locale l = new Locale("de");
 		newSetting.setLocale(l);
-		
-		biggestCounter = 0;
+		*/
 
+		biggestCounter = 0;
 	}
+
+	private boolean isXLSX(String path){
+
+		String [] splittedPath = path.split("\\.");
+
+		String fileExtension = splittedPath[splittedPath.length-1];
+		fileExtension = fileExtension.toLowerCase();
+
+		switch (fileExtension){
+			case "xlsx": return true;
+			case "xls": return false;
+			default: LOGGER.error("Wrong input file type: " + fileExtension);
+			LOGGER.error("Please check the input file. The program will terminate now");
+			System.exit(65);
+		}
+		return false;
+	}
+
 
 	public ArrayList<Task> readTasks() {
 		// puts all main.java.de.felixwolf.workerSelection.dataTypes.Task into an ArrayList
 		ArrayList<Task> allTasks = new ArrayList<Task>();
-		int countTasks = Integer.parseInt(sheet_general.getCell(1, 5).getContents());
-		for (int i = 0; i < countTasks; i++) {
 
-			Task task1 = new Task();
-			task1.setName(sheet_general.getCell(4 + i, 4).getContents());
-			task1.setId(Integer.parseInt(sheet_general.getCell(4 + i, 5).getContents()));
-			allTasks.add(task1);
+		int rowNum = 1;
+		boolean tasksLeftToRead = true;
 
-		}
+		do{
+			Row taskRow = sheet_tasks.getRow(rowNum);
+			if(taskRow == null){
+				// empty row
+				tasksLeftToRead = false;
+				break;
+			}
+
+			Task newTask = new Task();
+
+			// read task id
+			int column = 0;
+			Cell idCell = taskRow.getCell(column, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if(idCell == null){
+				LOGGER.warn("Empty id cell in non empty task row " + rowNum + 1 + ". No task is created for this row."); // TODO: +1 functional?
+				continue;
+			}
+			int taskId;
+			try {
+				taskId = (int) idCell.getNumericCellValue();
+			} catch (Exception e){
+				LOGGER.error("Task ID in row " + taskRow +1 + " could not be read. No task is created for this row.");
+				continue;
+			}
+			newTask.setId(taskId);
+
+			// read task name
+			column++;
+			Cell nameCell = taskRow.getCell(column, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if(nameCell == null){
+				LOGGER.warn("No name was given for the task with the ID " + taskId + ". The ID is used as name.");
+				newTask.setName(String.valueOf(taskId));
+			}
+			else {
+				newTask.setName(nameCell.getStringCellValue());
+			}
+
+			allTasks.add(newTask);
+			rowNum++;
+
+		}while (tasksLeftToRead);
 
 		return allTasks;
 	}
 
+
+
+
 	public ArrayList<Event> readEvents() {
 		// puts all Events into an ArrayList
-
-		ArrayList<Event> allEvents = new ArrayList<Event>();
-		ArrayList<Integer> exclusionDates = new ArrayList<Integer>();
-		HashMap<Integer, Integer> exclusionMap = new HashMap<Integer, Integer>();
 
 		// TimeZone gmtZone = TimeZone.getTimeZone("GMT");
 		// SimpleDateFormat format = new SimpleDateFormat("dd.mm.yyyy hh:mm");
 		// format.setTimeZone(gmtZone);
 
-		// get the exclusion dates
-		DatesCollection exclusionData = null;
+		// 1) get the exclusion data
+		DatesCollection exclusionData = readExclusionData();
+		LOGGER.debug("exclusion data was obtained");
+
+
+		// 2) get date range
+		readDateRange();
+		LOGGER.debug("date range was obtained");
+
+		// 3) derive regular events
+		ArrayList<Event> regularEvents = readRegularEvents(exclusionData);
+		LOGGER.debug("Regular events were read");
+
+		// 4) add special events
+		ArrayList<Event> specialEvents = readSpecialEvents();
+		LOGGER.debug("Special events were read");
+
+
+		// 5) merge events: combine both list and overwrite regular event if special event at same time
+		ArrayList<Event> allEvents = mergeEvents(regularEvents, specialEvents);
+		LOGGER.debug("Events were merged");
+
+		// sort the events
+		Collections.sort(allEvents, new Comparator<Event>() {
+			public int compare(Event e1, Event e2) {
+				return e1.getDate().compareTo(e2.getDate());
+			}
+		});
+
+		return allEvents;
+	}
+
+
+
+	private DatesCollection readExclusionData(){
+
+		DatesCollection excludedDates = new DatesCollection();
+
+		int rowNum = 9;
+		boolean dataLeftToRead = true;
+
+		do{
+			Row row = sheet_period.getRow(rowNum);
+			if(row == null){
+				// empty row
+				break;
+			}
+
+			// read event date
+			int column = 1;
+			Cell cell = row.getCell(column, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if(cell == null){
+				LOGGER.warn("Empty date cell in non empty excluded date row " + rowNum + 1 + ". No excluded date is created for this row."); // TODO: +1 functional?
+				rowNum++;
+				continue;
+			}
+
+			DatesCollection datesOfRow = null;
+			try {
+				datesOfRow = readCellOfDates(cell);
+			} catch (ParseException e) {
+				LOGGER.error("An exclusion date was erroneous. It can be found in line " + rowNum + 1); // TODO printed correctly?
+				LOGGER.error(e.getMessage());
+				e.printStackTrace();
+			}
+			excludedDates.addDateCollection(datesOfRow);
+
+			rowNum++;
+
+		}while (dataLeftToRead);
+
+		return excludedDates;
+	}
+
+	private void readDateRange() {
+
+		Row startRow = sheet_period.getRow(2);
 		try {
-			exclusionData = readDates(sheet_general,4, 18);
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			System.err.println("Error reading the exclusion dates for the time range -> K1");
-			e.printStackTrace();
+			rangeStart = startRow.getCell(1).getDateCellValue();
+		} catch (Exception e){
+			LOGGER.error("The entered start date could not be parsed. Please correct it");
+			System.exit(65);
 		}
-		exclusionDates = exclusionData.getWholeDates();
-		//System.out.println(exclusionDates);
-		exclusionMap = exclusionData.getSpecificEvents();
-		
-		// put regular events into arrayList (without the exclusion dates)
+
+		Row endRow = sheet_period.getRow(3);
+		try {
+			rangeEnd = endRow.getCell(1).getDateCellValue();
+		} catch (Exception e){
+			LOGGER.error("The entered end date could not be parsed. Please correct it");
+			System.exit(65);
+		}
+
 		// get the range
-		rangeStart = ((DateCell) sheet_general.getCell(4, 0)).getDate();
 		//System.out.println(rangeStart);
-		rangeEnd = ((DateCell) sheet_general.getCell(4, 1)).getDate();
 		//System.out.println(rangeEnd);
 		//System.out.println("Time diff: " + getDateDiff(rangeStart, rangeEnd, TimeUnit.DAYS));
+	}
 
-		// # of regular events during the week
-		int countRegDays = Integer.parseInt(sheet_general.getCell(1, 10).getContents());
-		
-		// add the regular events
-		for (int i = 0; i < countRegDays; i++) {
-			String weekday = sheet_general.getCell(4 + i, 11).getContents();
+
+	private ArrayList<Event> readRegularEvents(DatesCollection excludedDates) {
+
+		ArrayList<Event> regularEvents = new ArrayList<>();
+
+		int rowNum = 1;
+		boolean eventsLeftToBeRead = true;
+
+		do{
+			Row eventRow = sheet_regEvents.getRow(rowNum);
+
+			if(eventRow == null){
+				// empty row
+				eventsLeftToBeRead = false;
+				break;
+			}
+
+			// get id
+			Cell idCell = eventRow.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if(idCell == null){
+				// TODO message
+				LOGGER.warn("The regular event in line " + rowNum + " has no ID.");
+				break;
+			}
+			int regEventID = (int) idCell.getNumericCellValue();
+
+			//LOGGER.debug("current eventID " + regEventID);
+
+			String weekday = eventRow.getCell(2).getStringCellValue(); //sheet_regEvents.getCell(4 + i, 11).getContents();
 
 			Calendar c = Calendar.getInstance();
 			DateFormat format2 = new SimpleDateFormat("EEEE");
@@ -134,59 +319,40 @@ public class ExcelReader {
 				currentWeekday = format2.format(runner);
 				catchStuckinLoopCounter++;
 				if(catchStuckinLoopCounter > 8){
-					System.err.println("main.java.de.felixwolf.workerSelection.excelIO.ExcelReader, ReadEvents: Stuck in while-loop. Language difference between system and input file?");
+					System.err.println("ExcelReader, ReadEvents: Stuck in while-loop. Language difference between system and input file?");
 				}
 			}
-			
-			// one day has to be added; don't know why
-			//c.add(Calendar.DATE, 1);
-			//runner = c.getTime();
-			
+
 			if (runner.after(rangeEnd)) {
 				System.err.println("ER, readEvents: Range smaller than one week or writing error, write day in English");
 				break;
 			}
-			//System.out.println("before loop: " + runner);
-			
+
 			do {
 				//System.out.println("loop0: " + runner);
-				int runnerDayOfYear = calcDayOfYear(runner); 
-				// exclusion date?
-				if (exclusionDates.contains(runnerDayOfYear)) {
+				// exclusion date or specific event exclusion?
+				if (excludedDates.containsDate(runner) || excludedDates.containsEvent(runner, regEventID)) {
 					c.add(Calendar.DATE, 7);
 					runner = c.getTime();
 					continue;
 				}
 
-				// special exclusion?
-				int id = Integer.parseInt(sheet_general.getCell(4 + i, 10).getContents());
-				
-				if (exclusionMap.containsKey(runnerDayOfYear)) {
-					if (exclusionMap.get(runnerDayOfYear) == id) {
-						c.add(Calendar.DATE, 7);
-						runner = c.getTime();
-						continue;
-					}
-				}
-
 				// System.out.println("runner: " + runner);
 				// create event and add to allEvents
 				Event event0 = new Event();
-				event0.setName(sheet_general.getCell(4 + i, 9).getContents());
-				event0.setId(id);
+				event0.setName(eventRow.getCell(1).getStringCellValue()); //sheet_regEvents.getCell(4 + i, 9).getContents());
+				event0.setId(regEventID);
 
 				// get date and time
 				// get start time in hours and minutes
 				TimeZone tz = TimeZone.getTimeZone("CEST");
-				Date time = ((DateCell) sheet_general.getCell(4 + i, 12)).getDate();
+				Date time = eventRow.getCell(3).getDateCellValue(); //((DateCell) sheet_regEvents.getCell(4 + i, 12)).getDate();
 				Calendar t = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
 				t.setTimeZone(tz);
 				t.setTime(time);
-				
+
 				// System.out.println("time: " + time );
 
-				// System.out.println(time);
-			    
 				Calendar cFinal = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
 				cFinal.setTimeZone(tz);
 				cFinal.setTime(runner);
@@ -203,11 +369,11 @@ public class ExcelReader {
 				//System.out.println(format.format(theDate));
 				event0.setDate(theDate);
 
-				event0.setComment(sheet_general.getCell(4 + i, 13).getContents());
+				event0.setComment(eventRow.getCell(6).getStringCellValue()); //sheet_regEvents.getCell(4 + i, 13).getContents());
 
 				// extract tasks for event
-				String tasksString = sheet_general.getCell(4 + i, 14).getContents();
-				ArrayList<String> tasksStringList = breakUpaString(tasksString, ";");
+				String tasksString = eventRow.getCell(4).getStringCellValue(); // sheet_regEvents.getCell(4 + i, 14).getContents();
+				ArrayList<String> tasksStringList = breakUpaString(tasksString, ";"); // TODO
 				ArrayList<Integer> eventTasks = new ArrayList<Integer>();
 
 				for (String s : tasksStringList) {
@@ -217,25 +383,21 @@ public class ExcelReader {
 				// sort the tasks
 				Collections.sort(eventTasks);
 				event0.setEventTasks(eventTasks);
-				
-				// extract counters for event
-				String countersString = sheet_general.getCell(4 + i, 15).getContents();
-				ArrayList<String> countersStringList = breakUpaString(countersString, ";");
-				ArrayList<Integer> eventCounters = new ArrayList<Integer>();
 
-				for (String s : countersStringList) {
-					// System.out.println(s);
-					int counter = Integer.parseInt(s);
-					eventCounters.add(counter);
-					if(counter > biggestCounter){
-						biggestCounter = counter;
-					}
-				}
+				// extract counters for event
+				Cell cellOfIntegers = eventRow.getCell(5);
+				ArrayList<Integer> eventCounters = readCellOfIntegers(cellOfIntegers);
+
 				// sort the counters
 				Collections.sort(eventCounters);
+
+				if(eventCounters.get(eventCounters.size() - 1) > biggestCounter){
+					biggestCounter = eventCounters.get(eventCounters.size() - 1);
+				}
+
 				event0.setActiveCounters(eventCounters);
-				
-				allEvents.add(event0);
+
+				regularEvents.add(event0);
 
 				// add seven days
 				c.add(Calendar.DATE, 7);
@@ -243,132 +405,257 @@ public class ExcelReader {
 
 			} while (runner.before(rangeEnd));
 
-		}
+			rowNum++;
 
-		// add the special events to the arrayList
-		int countSpecialEvents = Integer.parseInt(sheet_general.getCell(1, 23).getContents());
-		for (int i = 0; i < countSpecialEvents; i++) {
+		} while (eventsLeftToBeRead);
+
+		return regularEvents;
+	}
+
+
+
+
+	private ArrayList<Event>  readSpecialEvents() {
+
+		ArrayList<Event> specialEvents = new ArrayList<>();
+
+		int rowNum = 1;
+		boolean eventsLeftToBeRead = true;
+
+		do {
+			Row eventRow = sheet_specEvents.getRow(rowNum);
+
+			if (eventRow == null) {
+				// empty row
+				eventsLeftToBeRead = false;
+				break;
+			}
+
+			// get id
+			Cell idCell = eventRow.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if (idCell == null) {
+				LOGGER.warn("The special event in line " + rowNum + " has no ID.");
+				break;
+			}
 
 			Event event1 = new Event();
-			event1.setName(sheet_events.getCell(1, 1 + i).getContents());
-			event1.setId(Integer.parseInt(sheet_events.getCell(2, 1 + i).getContents()));
-			System.out.println("event: " + event1.getName());
+
+			// set ID and name
+			int specEventID = (int) idCell.getNumericCellValue();
+			event1.setId(specEventID);
+			String eventName = eventRow.getCell(1).getStringCellValue();
+			event1.setName(eventName);
 
 			// get date and time
+			Calendar cFinal2 = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
+			Date date = eventRow.getCell(2).getDateCellValue();
+
+			if (rangeStart != null && rangeEnd != null && (date.before(rangeStart) || date.after(rangeEnd))) {
+				LOGGER.info("Event " + eventName + " with the id " + specEventID + " is outside of the defined range. It is ignored.");
+				continue;
+			}
+
+
 			// get start time in hours and minutes
-			Date time2 = ((DateCell) sheet_events.getCell(4, 1 + i)).getDate();
-			Calendar t2 = Calendar.getInstance(TimeZone.getTimeZone("CEST")); // Timezone
-																				// ...
-																				// is
-																				// deletable
+			Date time2 = eventRow.getCell(3).getDateCellValue();
+			Calendar t2 = Calendar.getInstance(TimeZone.getTimeZone("GMT")); // Timezone
+			// ...
+			// is
+			// deletable
 			t2.setTime(time2);
 			// System.out.println("time2: " + time2 );
 
-			// System.out.println(time);
-			Calendar cFinal2 = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
-			Date date2 = ((DateCell) sheet_events.getCell(3, 1 + i)).getDate();
-
 			// System.out.println("date2: " + date2);
-			cFinal2.setTime(date2);
-			// int month = cal.get(Calendar.MONTH); better?
+			cFinal2.setTime(date);
+			cFinal2.add(Calendar.HOUR, 3); // simple fix for java calendar bug. See: https://stackoverflow.com/questions/25239362/why-gregoriancalendar-changes-day-when-setting-hour-of-day-to-0-in-utc
+
 			cFinal2.set(Calendar.HOUR_OF_DAY, t2.get(11));
 			cFinal2.set(Calendar.MINUTE, t2.get(12));
 			cFinal2.set(Calendar.SECOND, t2.get(13));
+
 			// System.out.println("t2: " +t2.getTime() + " " + t2.get(12));
 			// System.out.println("cf2: " + cFinal2.getTime());
 			Date theDate2 = cFinal2.getTime();
 			// System.out.println(format.format(theDate2));
+
 			event1.setDate(theDate2);
 
-			event1.setComment(sheet_events.getCell(5, 1 + i).getContents());
+			event1.setComment(eventRow.getCell(6).getStringCellValue());
 			// extract tasks for event
-			String tasksString = sheet_events.getCell(6, 1 + i).getContents();
-			ArrayList<String> tasksStringList = breakUpaString(tasksString, ";");
-			ArrayList<Integer> eventTasks = new ArrayList<Integer>();
-			//System.out.println(event1.getId() + ": " + tasksString);
-			for (String s : tasksStringList) {
-				// System.out.println(s);
-				eventTasks.add(Integer.parseInt(s));
-			}
+			Cell cellOfTasks = eventRow.getCell(4);
+			ArrayList<Integer> eventTasks = readCellOfIntegers(cellOfTasks);
 
 			// sort the tasks and add them to the event
 			Collections.sort(eventTasks);
 			event1.setEventTasks(eventTasks);
-			
-			// extract counters for event
-			String countersString = sheet_events.getCell(7, 1 + i).getContents();
-			ArrayList<String> countersStringList = breakUpaString(countersString, ";");
-			ArrayList<Integer> eventCounters = new ArrayList<Integer>();
-			
-			for (String s : countersStringList) {
-				// System.out.println(s);
-				int counter = Integer.parseInt(s);
-				eventCounters.add(counter);
-				if(counter > biggestCounter){
-					biggestCounter = counter;
-				}
+
+			// extract counters for event // TODO check
+			Cell cellOfIntegers = eventRow.getCell(5);
+			ArrayList<Integer> eventCounters = readCellOfIntegers(cellOfIntegers);
+
+			// sort the counters
+			Collections.sort(eventCounters);
+
+			if(eventCounters.get(eventCounters.size() - 1) > biggestCounter){
+				biggestCounter = eventCounters.get(eventCounters.size() - 1);
 			}
+
 			// sort the counters
 			Collections.sort(eventCounters);
 			event1.setActiveCounters(eventCounters);
-			
 
-			// check if a regular main.java.de.felixwolf.workerSelection.dataTypes.Event is at the same time
-			int deleteIndex = -1;
-			for (Event aEvent : allEvents) {
-				if (aEvent.getDate().equals(theDate2)) {
-					deleteIndex = allEvents.indexOf(aEvent);
-					event1.setOverWrittenID(aEvent.getId());
-					break;
-				}
-			}
-			if (deleteIndex > -1) {
-				allEvents.remove(deleteIndex);
-				deleteIndex = -1;
-			}
+			specialEvents.add(event1);
+			rowNum++;
+		} while (eventsLeftToBeRead);
 
-			allEvents.add(event1);
+		return specialEvents;
+	}
+
+	/**
+	 * Method to merge the two event lists. Regular events are overwritten by special events if they have the same date & time.
+	 * @param regularEvents
+	 * @param specialEvents
+	 * @return
+	 */
+	ArrayList<Event> mergeEvents(ArrayList<Event> regularEvents, ArrayList<Event> specialEvents){
+
+		HashMap<String, Event> eventsMap = new HashMap<>();
+
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmm");
+
+		// first place the regular events in the Hashmap
+		for(Event regEvent:regularEvents){
+			String key = dateFormat.format(regEvent.getDate());
+			eventsMap.put(key, regEvent);
 		}
 
-		// sort the arrayList
-		Collections.sort(allEvents, new Comparator<Event>() {
-			public int compare(Event e1, Event e2) {
-				return e1.getDate().compareTo(e2.getDate());
+		// the special events are placed in hashmap
+		for(Event specEvent:specialEvents){
+			String key = dateFormat.format(specEvent.getDate());
+			if(eventsMap.containsKey(key)){
+				// if there is already an event at the time, then retrieve its id
+				Event regEventToBeOverwritten = eventsMap.get(key);
+				int idToBeOverwritten = regEventToBeOverwritten.getId();
+				specEvent.setOverWrittenID(idToBeOverwritten);
 			}
-		});
+			eventsMap.put(key, specEvent);
+		}
 
+		ArrayList<Event> allEvents = new ArrayList<>(eventsMap.values());
 		return allEvents;
 	}
 
-	public ArrayList<Worker> readWorkers(int biggestCounter) {
-		// read the information for the workers and put them into the arrayList
-		ArrayList<Worker> allWorkers = new ArrayList<Worker>();
-		
-		int workersCount = Integer.parseInt(sheet_general.getCell(1, 31).getContents());
-		for (int i = 0; i < workersCount; i++) {
-			
-			Worker worker1 = new Worker();
-			worker1.setName(sheet_workers.getCell(1, 1 + i).getContents());
-			worker1.setId(Integer.parseInt(sheet_workers.getCell(2, 1 + i).getContents()));
-			System.out.println("worker: " + worker1.getName());
-			
-			// extract tasks for worker
-			String tasksString = sheet_workers.getCell(3, 1 + i).getContents();
-			ArrayList<String> tasksStringList = breakUpaString(tasksString, ";");
-			ArrayList<Integer> possibleTasks = new ArrayList<Integer>();
 
-			for (String s : tasksStringList) {
-				// System.out.println(s);
-				possibleTasks.add(Integer.parseInt(s));
+	private DatesCollection readCellOfDates(Cell cell)  throws ParseException{
+
+		if(cell == null){
+			return null;
+		}
+
+		DatesCollection datesOfCell = new DatesCollection();
+
+		if (cell.getCellTypeEnum() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)){
+			// The cell contains a single date
+			datesOfCell.addDate(cell.getDateCellValue());
+		}
+		else {
+			String stringOfDates = cell.getStringCellValue();
+
+			if(stringOfDates.isEmpty()){
+				return null;
 			}
 
-			worker1.setPossibleTasks(possibleTasks);
-			
-			// prefered Events
-			String prefEventsString = sheet_workers.getCell(4, 1 + i).getContents();
+			// string preprocessing: remove all spaces and replace
+			stringOfDates = stringOfDates.replaceAll("\\s+","");
+			stringOfDates = stringOfDates.replaceAll("–", "-");
+			String [] datesArray = stringOfDates.split(";");
+
+			for(int i = 0; i < datesArray.length; i++){
+
+				String stringDate = datesArray[i];
+
+				if(stringDate.contains("-")){
+					// this is a date range
+					String [] range = stringDate.split("-");
+
+					if(range.length != 2){
+						throw new ParseException("Wrong range input: " + stringDate, 0);
+					}
+
+					Date tempDate;
+					Date end;
+
+					try {
+						tempDate = justDateformat.parse(range[0]);
+						end = justDateformat.parse(range[1]);
+					} catch (ParseException e){
+						throw new ParseException("One input of the range was not a date: " + stringDate, i + 1);
+					}
+
+					while (tempDate.before(end)) {
+
+						datesOfCell.addDate(tempDate);
+
+						Calendar cal = Calendar.getInstance();
+						cal.setTime(tempDate);
+						cal.add(Calendar.DATE, 1); // minus number would
+						tempDate = cal.getTime();
+					}
+					datesOfCell.addDate(end);
+				}
+
+				else if(stringDate.contains("|")){
+					// this is a specific event
+
+					String [] eventInfo = stringDate.split("\\|");
+
+					if(eventInfo.length != 2){
+						throw new ParseException("Wrong specific event input: " + stringDate, 0);
+					}
+
+					Date date;
+					try {
+						date = justDateformat.parse(eventInfo[0]);
+					} catch (ParseException e){
+						throw new ParseException("The date of the following event could not be parsed: " + stringDate, i + 1);
+					}
+
+					int eventID;
+					try {
+						eventID = Integer.parseInt(eventInfo[1]);
+					} catch (NumberFormatException e){
+						throw new ParseException("The eventID could not be parsed: " + stringDate, i + 1);
+					}
+
+					datesOfCell.addEvent(date, eventID);
+
+				}
+
+				else {
+					// this is an ordinary date
+					Date date;
+					try {
+						date = justDateformat.parse(stringDate);
+					} catch (ParseException e) {
+						throw new ParseException("The erroneous input was '" + stringDate + "'.", i + 1);
+					}
+					datesOfCell.addDate(date);
+				}
+			}
+		}
+		return datesOfCell;
+	}
+
+
+	private ArrayList<Integer> readCellOfIntegers(Cell cell){
+
+		// TODO error handling
+
+		/*
+					String prefEventsString = sheet_workers.getCell(4, 1 + i).getContents();
 			ArrayList<String> prefEventsStringList = breakUpaString(prefEventsString, ";");
 			ArrayList<Integer> preferedEvents = new ArrayList<Integer>();
-			
+
 			for (String s : prefEventsStringList) {
 				// System.out.println(s);
 				if(s.isEmpty()){
@@ -395,235 +682,163 @@ public class ExcelReader {
 					preferedEvents.add(Integer.parseInt(s));
 				}
 			}
-			worker1.setPreferedEvents(preferedEvents);
-			
-			// excluded Events
-			String excludedEventsString = sheet_workers.getCell(5, 1 + i ).getContents();
-			ArrayList<String> excludedEventsStringList = breakUpaString(excludedEventsString, ";");
-			ArrayList<Integer> excludedEvents = new ArrayList<Integer>();
+		 */
+		ArrayList<Integer> intsOfCell = new ArrayList<>();
 
-			for (String s : excludedEventsStringList) {
-				// System.out.println(s);
-				if(s.isEmpty()){
-					excludedEvents.add(-1);
-				}
-				else if(s.contains("-")){
-					ArrayList<String> excluEventRange = breakUpaString(s, "-");
-					if(excluEventRange.size() == 2) {
-						int excluEventRangeStart = Integer.parseInt(excluEventRange.get(0));
-						int excluEventRangeEnd = Integer.parseInt(excluEventRange.get(1));
-						if(excluEventRangeStart > excluEventRangeEnd){
-							System.err.println("Excluded ID range start is bigger than end -> this will result in an error");
-						}
-						while (excluEventRangeStart <= excluEventRangeEnd){
-							excludedEvents.add(excluEventRangeStart);
-							excluEventRangeStart++;
-						}
-					}
-					else{
-						System.err.println(worker1.getName() + ": Found a separator in excluded EventIds, but not 2 numbers");
-					}
-				}
-				else{
-					excludedEvents.add(Integer.parseInt(s));
+		if(cell.getCellTypeEnum().equals(CellType.NUMERIC)){
+			int singleInt = (int) cell.getNumericCellValue();
+			intsOfCell.add(singleInt);
+			return intsOfCell;
+		}
+
+		String cellStr = cell.getStringCellValue();
+		cellStr = cellStr.replaceAll("\\s+","");
+		cellStr = cellStr.replaceAll("–", "-");
+		String[] splitted = cellStr.split(";");
+
+		for(String str:splitted){
+
+			if(str.contains("-")){
+				String[] range = str.split("-");
+				int rangeStart = Integer.parseInt(range[0]);
+				int rangeEnd = Integer.parseInt(range[1]);
+
+				for(int i = rangeStart; i <= rangeEnd; i++){
+					intsOfCell.add(i);
 				}
 			}
+
+			else {
+				intsOfCell.add(Integer.parseInt(str));
+			}
+		}
+		return intsOfCell;
+	}
+
+
+
+
+
+
+	public ArrayList<Worker> readWorkers(int biggestCounter) {
+		// read the information for the workers and put them into the arrayList
+		ArrayList<Worker> allWorkers = new ArrayList<Worker>();
+
+		int rowNum = 1;
+		boolean workersLeftToBeRead = true;
+
+		do {
+			Row workerRow = sheet_workers.getRow(rowNum);
+
+			if (workerRow == null) {
+				// empty row
+				workersLeftToBeRead = false;
+				break;
+			}
+
+			Worker worker1 = new Worker();
+
+			Cell workerIDcell = workerRow.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if(workerIDcell == null){
+				LOGGER.warn("Empty worker id cell in non empty row " + rowNum + 1 + ". Skipping row");
+				rowNum++;
+				break;
+			}
+
+			int workerID = (int) workerIDcell.getNumericCellValue();
+			worker1.setId(workerID);
+			String workerName = workerRow.getCell(1).getStringCellValue();
+			worker1.setName(workerName);
+			//System.out.println("worker: " + worker1.getName());
+
+			// extract tasks for worker
+			Cell tasksCell = workerRow.getCell(2);
+			ArrayList<Integer> possibleTasks = readCellOfIntegers(tasksCell);
+			worker1.setPossibleTasks(possibleTasks);
+
+			// prefered events
+			Cell preferedEventsCell = workerRow.getCell(3);
+			ArrayList<Integer> preferedEvents = readCellOfIntegers(preferedEventsCell);
+			worker1.setPreferedEvents(preferedEvents);
+
+			// excluded events
+			Cell excludedEventsCell = workerRow.getCell(4);
+			ArrayList<Integer> excludedEvents = readCellOfIntegers(excludedEventsCell);
 			worker1.setExcludedEvents(excludedEvents);
-			
-			// preferred Dates
+
+			// prefered dates
+			Cell preferedDatesCell = workerRow.getCell(5, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 			DatesCollection preferedDates = null;
 			try {
-				preferedDates = readDates(sheet_workers, 6, 1 + i);
+				preferedDates = readCellOfDates(preferedDatesCell);
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				System.err.println("Error reading the prefered dates for " + worker1.getName() + ", ID: " + worker1.getId());
+				LOGGER.error("A prefered date of " + workerName + " could not be read.");
+				LOGGER.error(e.getMessage());
 				e.printStackTrace();
+				System.exit(65);
 			}
 			worker1.setPreferedDates(preferedDates);
-			
-			// excluded Dates
+
+			// excluded dates
+			Cell excludedDatesCell = workerRow.getCell(6);
 			DatesCollection excludedDates = null;
 			try {
-				excludedDates = readDates(sheet_workers, 7, 1 + i);
-				//System.out.println("exdates of " + worker1.getName() + ": " + excludedDates.getWholeDates().toString());
+				excludedDates = readCellOfDates(excludedDatesCell);
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				System.err.println("Error reading the excluded dates for " + worker1.getName() + ", ID: " + worker1.getId());
+				LOGGER.error("An excluded date of " + workerName + " could not be read.");
+				LOGGER.error(e.getMessage());
 				e.printStackTrace();
+				System.exit(65);
 			}
 			worker1.setExcludedDates(excludedDates);
-			
+
 			// works with and without
-			String worksWith = sheet_workers.getCell(8,  1 + i).getContents();
-			if(!worksWith.isEmpty()){
-				worker1.setWorksWith(Integer.parseInt(worksWith));
+			Cell worksWithCell = workerRow.getCell(7, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if(worksWithCell != null){
+				worker1.setWorksWith((int) worksWithCell.getNumericCellValue());
 			}
-			String worksWithout = sheet_workers.getCell(9, 1 + i ).getContents();
-			if(!worksWithout.isEmpty()){
-				worker1.setWorksWithout(Integer.parseInt(worksWithout));
+
+			Cell worksWithoutCell = workerRow.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+			if(worksWithoutCell != null){
+				worker1.setWorksWithout((int) worksWithoutCell.getNumericCellValue());
 			}
-			
+
 			// create counter
 			int [] counter = new int [biggestCounter + 1];
 			Arrays.fill(counter, 0);
-			
+
 			// read counter
-			String counterString = sheet_workers.getCell(10, 1 + i).getContents();
-			if(!counterString.isEmpty()){
-				counter[0] = Integer.parseInt(counterString);
+			Cell counterCell = workerRow.getCell(9, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+
+			if(counterCell != null){
+				counter[0] = (int) counterCell.getNumericCellValue();
 				worker1.setCounter(counter);
 				//System.out.println("*** " + Integer.parseInt(counterString));
 			}
+
 			else{
 				worker1.setCounter(counter);
 			}
-			
+
 			// read last date
-			Date lastDate = ((DateCell) sheet_workers.getCell(11, 1 + i)).getDate();
+			Date lastDate = workerRow.getCell(10).getDateCellValue();
 			worker1.setLastDate(lastDate);
-			
+
 			allWorkers.add(worker1);
-			
-		}
-		
-	
-		
+
+
+
+			rowNum++;
+		} while (workersLeftToBeRead);
+
 		return allWorkers;
 	}
 	
-	public DatesCollection readDates(Sheet sheet0, int col, int row) throws ParseException{
-		// takes the coordinates of the input zero based
-		// return the Dates of the Cell
-		
-		DatesCollection theDates = new DatesCollection();
-		ArrayList<Integer> wholeDates = new ArrayList<Integer>();
-		HashMap<Integer, Integer> specificDates = new HashMap<Integer, Integer>();
-		
-		String temp1 = sheet0.getCell(col, row).getContents();
-		//System.out.println("ER, readDates: temp1: " + temp1);
 
-		if (temp1.isEmpty()) {
-			//System.out.println("There are no days to exclude");
-		} else {
-			boolean singleDate = false;
-			ArrayList<String> stringDates = new ArrayList<String>();
-			if (temp1.contains(";")) {
-				// there are several dates
-				stringDates = breakUpaString(temp1, ";");
-			} else {
-				// there is just one date
-				stringDates.add(temp1);
-				singleDate = true;
-			}
-
-			for (String stringDate : stringDates) {
-				if (stringDate.contains("-") || stringDate.contains("–")) {
-					// a date range
-
-					stringDate = stringDate.replaceAll("–", "-");
-
-					ArrayList<String> range = new ArrayList<String>();
-					range = breakUpaString(stringDate, "-");
-
-					Date start = extractDateFromString(range.get(0));
-					Date end = extractDateFromString(range.get(1));
-					Date date = start;
-
-					while (date.before(end)) {
-						//wholeDates.add(date);
-						Calendar cal = Calendar.getInstance();
-						cal.setTime(date);
-						wholeDates.add(cal.get(Calendar.DAY_OF_YEAR));
-						cal.add(Calendar.DATE, 1); // minus number would
-													// decrement the days
-						date = cal.getTime();
-					}
-					//wholeDates.add(end);
-					Calendar cal = Calendar.getInstance();
-					cal.setTime(end);
-					wholeDates.add(cal.get(Calendar.DAY_OF_YEAR));
-					//System.out.println("WholeDates0: " + wholeDates);
-
-				} else if (!stringDate.contains("|")) {
-					// a single day
-					Date date = new Date();
-					int dateDdayOfYear = 0;
-					if(singleDate){
-						date = ((DateCell) sheet0.getCell(col, row)).getDate();
-						dateDdayOfYear = calcDayOfYear(date);
-					}
-					else{
-						
-						
-						
-						date  =  extractDateFromString(stringDate);
-						dateDdayOfYear = calcDayOfYear(date);
-				
-					}
-					//Date date = ((DateCell) sheet0.getCell(col, row)).getDate();
-					//Date date  =  extractDateFromString(stringDate);
-					if (!wholeDates.contains(dateDdayOfYear)) {
-						wholeDates.add(dateDdayOfYear);
-						//System.out.println("WholeDates1: " + wholeDates);
-					} else {
-						System.out.println("The date is already excluded");
-					}
-
-				} else {
-					// String contains "|" => a specific event
-
-					ArrayList<String> splits = new ArrayList<String>();
-					splits = breakUpaString(stringDate, "|");
-
-					Date date = extractDateFromString(splits.get(0));
-					int dateDdayOfYear = calcDayOfYear(date);
-
-					if (!wholeDates.contains(dateDdayOfYear)) {
-						int id = Integer.parseInt(splits.get(1));
-						specificDates.put(dateDdayOfYear, id);
-
-					} else {
-						System.out.println("The date is already excluded");
-					}
-				}
-			}
-
-		}// end else, string not empty
-		//System.out.println("WholeDates: " + wholeDates);
-		theDates.setWholeDates(wholeDates);
-		theDates.setSpecificEvents(specificDates);
-		
-		return theDates;
-	}
 	
 	
 
-	private Date extractDateFromString(String s) throws ParseException {
-		// returns a date from a String
-		//System.out.println("coo coo :" + s);
-		// clean the string
-		String s2 = "";
-		if (s.contains(" ")) {
-			//System.out.println("Date extraction from string: string cleaning");
-			s2 = s.replace(" ", "");
-		} 
-		else{
-			s2 = s;
-		}
-		
-		SimpleDateFormat format3 = new SimpleDateFormat("dd.MM.yyyy");
-		// https://stackoverflow.com/questions/4216745/java-string-to-date-conversion
-		Date date = new Date();
-		date = format3.parse(s2);
-		
-		// test if the date is inside the time frame
-		if (rangeStart != null && rangeEnd != null && (date.before(rangeStart) || date.after(rangeEnd))){
-			System.err.println("WARNING: date outside of specified date range: " + s);
-		}
-		
-		
-		return date;
-	}
+
 
 	private ArrayList<String> breakUpaString(String unserperatedString, String seperator) {
 		ArrayList<String> tempArrayList1 = new ArrayList<String>();
@@ -649,7 +864,7 @@ public class ExcelReader {
 				str2 = str;
 			}
 			*/
-			
+
 			str2 = str.replaceAll("\\s+","");
 			//System.out.println(str2);
 			tempArrayList2.add(str2);
@@ -660,9 +875,7 @@ public class ExcelReader {
 	}
 
 	public int readCoolDown() {
-		String coolDownString = sheet_general.getCell(4, 20).getContents();
-		int coolDown = Integer.parseInt(coolDownString);
-		return coolDown;
+		return (int) sheet_settings.getRow(1).getCell(1).getNumericCellValue();
 	}
 	
 	public static long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
@@ -682,6 +895,6 @@ public class ExcelReader {
 		return biggestCounter;
 	}
 	
-	
+
 	
 }

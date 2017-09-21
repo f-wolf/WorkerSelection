@@ -1,115 +1,115 @@
 package de.felixwolf.workerSelection.excelIO;
 
-import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import jxl.CellView;
-import jxl.Workbook;
-import jxl.write.Label;
-import jxl.write.WritableCell;
-import jxl.write.WritableCellFormat;
-import jxl.write.WritableSheet;
-import jxl.write.WritableWorkbook;
-import jxl.write.WriteException;
-import jxl.write.biff.RowsExceededException;
-
 import de.felixwolf.workerSelection.dataTypes.*;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExcelWriter {
 
-	WritableWorkbook result;
-	
+	private Workbook wb = new XSSFWorkbook();
+	private CreationHelper createHelper = wb.getCreationHelper();
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ExcelWriter.class);
+
+
 
 	public ExcelWriter() throws IOException {
 		// make new Excelfile
+
+
+
+		//wb = Workbook.createWorkbook(new File(filename));
+	}
+
+
+	
+	public void writeResult(ArrayList<String[]> outputs) throws IOException {
+
+		Sheet sheet_result = wb.createSheet("Result");
+
+		for (int rowNum = 0; rowNum < outputs.size(); rowNum++) {
+			String[] rowString = outputs.get(rowNum);
+
+			Row row = sheet_result.createRow((short)rowNum);
+
+			for (int col = 0; col < rowString.length; col++) {
+
+				row.createCell(col).setCellValue(createHelper.createRichTextString(rowString[col]));
+			}
+		}
+		
+		//int columnCount = outputs.get(0).length;
+		int [] widthInCharacters = {3, 11, 12, 6, 17, 17, 17};
+		for(int i = 0; i < widthInCharacters.length; i++){
+			sheet_result.setColumnWidth(i, widthInCharacters[i] * 256);
+		}
+
+	}
+
+
+	public void writeWorkers(ArrayList<Worker> allWorkers)  {
+
+		Sheet sheet_workers = wb.createSheet("Workers");
+
+		CellStyle cellDateStyle = wb.createCellStyle();
+		cellDateStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd.mm.yyyy"));
+
+		Row legendRow = sheet_workers.createRow(0);
+
+		legendRow.createCell(0).setCellValue(createHelper.createRichTextString("Name"));
+		legendRow.createCell(1).setCellValue(createHelper.createRichTextString("last active"));
+		// make the legend for all counters
+		int [] oneCounter = allWorkers.get(0).getCounter();
+		for(int c = 0; c < oneCounter.length; c++){
+			legendRow.createCell(2 + c).setCellValue(createHelper.createRichTextString("counter " + c));
+		}
+
+		// write all workers
+		for(int i = 0; i < allWorkers.size(); i++){
+
+			Row row = sheet_workers.createRow(i + 1);
+
+			// write the worker's name
+			row.createCell(0).setCellValue(createHelper.createRichTextString(allWorkers.get(i).getName()));
+
+			// write last active date
+			Date lastActive = allWorkers.get(i).getLastDate();
+			Cell dateCell = row.createCell(1);
+			dateCell.setCellValue(lastActive);// todo correctly formated?
+			dateCell.setCellStyle(cellDateStyle);
+
+			// write the counters
+			for(int c = 0; c < oneCounter.length; c++){
+
+				row.createCell(2 + c).setCellValue(allWorkers.get(i).getCounter()[c]);
+
+			}
+		}
+	}
+
+	public void finishFile() throws IOException{
+
 		// creating a filename based on the current date and time
 		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 		// get current date time with Date()
 		Date date = new Date();
-		String filename = dateFormat.format(date) + "_output.xls";
+		String filename = dateFormat.format(date) + "_output.xlsx";
 
-		result = Workbook.createWorkbook(new File(filename));
-		
-	}
+		FileOutputStream fileOut = new FileOutputStream(filename);
+		wb.write(fileOut);
+		fileOut.close();
 
-	
-	public void writeResult(ArrayList<String[]> outputs) throws IOException, RowsExceededException, WriteException {
-		
-		result.createSheet("Result", 0);
-		WritableSheet sheet0  = result.getSheet(0);
-		for (int row = 0; row < outputs.size(); row++) {
-			String[] rowString = outputs.get(row);
-			for (int col = 0; col < rowString.length; col++) {
-				Label label = new Label(col, row, rowString[col]);
-				sheet0.addCell(label);
-			}
+		LOGGER.debug("Finish file finished");
 
-		}
-		
-		// change width of columns
-		
-		int [] widthInCharacters = {3, 11, 12, 6, 17, 17, 17};
-		
-		for (int i = 0; i < 7; i++) {
-			CellView cv = sheet0.getColumnView(i);
-			cv.setSize(widthInCharacters[i] * 256); 
-			//cv.setAutosize(true);
-			sheet0.setColumnView(i, cv);
-		}
-		
-
-
-
-	}
-	
-	public void writeWorkers(ArrayList<Worker> allWorkers) throws RowsExceededException, WriteException {
-		result.createSheet("Workers", 1);
-		WritableSheet sheet1  = result.getSheet(1);
-		
-		Label label = new Label(0, 0, "Name");
-		sheet1.addCell(label);
-		
-		Label label2 = new Label(1, 0, "last active");
-		sheet1.addCell(label2);
-		
-		// make the legend for all counters
-		int [] oneCounter = allWorkers.get(0).getCounter();
-		for(int c = 0; c < oneCounter.length; c++){
-			label = new Label(2 + c, 0,  "counter " + c);
-			sheet1.addCell(label);
-		}
-		
-		// write all workers
-		for(int i = 0; i < allWorkers.size(); i++){
-			Label name = new Label(0, i + 1, allWorkers.get(i).getName());
-			sheet1.addCell(name);
-			
-			// write last active date
-			Date lastActive = allWorkers.get(i).getLastDate();
-			WritableCellFormat format = new jxl.write.WritableCellFormat(new jxl.write.DateFormat("m/d/yyyy h:mm"));
-			WritableCell cell = new jxl.write.DateTime(1, i+1, lastActive, format);
-			sheet1.addCell(cell);
-			
-			// write the counters
-			for(int c = 0; c < oneCounter.length; c++){
-				sheet1.addCell(new jxl.write.Number(c + 2, i + 1, allWorkers.get(i).getCounter()[c]));
-			}
-			
-			// old solution
-			//Label count = new Label(i + 1, 1, String.valueOf(allWorkers.get(i).getCounter()[0]));
-			//sheet1.addCell(count);
-		}
-		
-	}
-	
-	
-	public void finishFile() throws IOException, WriteException{
-		result.write();
-		result.close();
 	}
 
 
@@ -134,9 +134,9 @@ public class ExcelWriter {
 	 * Date date = new Date(); String filename = dateFormat.format(date) +
 	 * "_output.xls";
 	 * 
-	 * WritableWorkbook result = Workbook.createWorkbook(new File(filename));
-	 * result.createSheet("Result", 0); WritableSheet sheet0 =
-	 * result.getSheet(0);
+	 * WritableWorkbook wb = Workbook.createWorkbook(new File(filename));
+	 * wb.createSheet("Result", 0); WritableSheet sheet0 =
+	 * wb.getSheet(0);
 	 * 
 	 * // fill with Content
 	 * 
@@ -163,7 +163,7 @@ public class ExcelWriter {
 	 * 
 	 * currentRow++; }
 	 * 
-	 * result.write(); result.close();
+	 * wb.write(); wb.close();
 	 * 
 	 * }
 	 */

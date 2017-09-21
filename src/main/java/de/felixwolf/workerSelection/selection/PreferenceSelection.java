@@ -51,15 +51,10 @@ public class PreferenceSelection {
 	}
 	
 	private boolean preferesWholeDate(Event e, Worker w){
-		
 		DatesCollection preferedDates = w.getPreferedDates();
-		ArrayList<Integer> preferedWholeDates = preferedDates.getWholeDates();
-		//System.out.println("prefWholeDates: " + preferedWholeDates);
 		Date eDate = e.getDate();
-		int eDateDayofYear = calcDayOfYear(eDate);
-		//System.out.println(eDateDayofYear);
-		
-		if(preferedWholeDates.contains(eDateDayofYear)){
+
+		if(preferedDates != null && preferedDates.containsDate(eDate)){
 			return true;
 		}
 		return false;
@@ -67,16 +62,13 @@ public class PreferenceSelection {
 		
 	private boolean preferesSpecificEvent(Event e, Worker w) {
 		DatesCollection preferedDates = w.getPreferedDates();
-		HashMap<Integer, Integer> preferedSpecificEvents = preferedDates.getSpecificEvents();
 		Date eDate = e.getDate();
 		int eID = e.getId();
-		int eDateDayofYear = calcDayOfYear(eDate);
-		
-		if(preferedSpecificEvents.containsKey(eDateDayofYear)){
-			if(preferedSpecificEvents.get(eDateDayofYear) == eID){
-				return true;
-			}
+
+		if(preferedDates != null && preferedDates.containsEvent(eDate, eID)){
+			return true;
 		}
+
 		return false;
 	}
 		

@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import jxl.write.WriteException;
 import de.felixwolf.workerSelection.excelIO.*;
 import de.felixwolf.workerSelection.dataTypes.*;
 import de.felixwolf.workerSelection.selection.*;
@@ -20,7 +19,7 @@ public class Run {
 
 	public static void main(String[] args) {
 
-		String inputPath = "input.xls";
+		String inputPath = "input.xlsx";
 		int columnsWithText = 4;
 		int impactOfPrefEvent = 3;
 		boolean shuffle = true;
@@ -33,15 +32,16 @@ public class Run {
 		ExcelReader excelReader = new ExcelReader(inputPath);
 		allTasks = excelReader.readTasks();
 		LOGGER.info("All tasks are read");
-		System.out.println("Tasks are read");
+
 		allEvents = excelReader.readEvents();
-		System.out.println("Events are read");
+		LOGGER.info("All events are read");
 		int biggestCounter = excelReader.getBiggestCounter(); // has to be after readEvents
 		allWorkers = excelReader.readWorkers(biggestCounter);
-		System.out.println("Workers are read");
+		LOGGER.info("Workers are read");
 		int coolDownTime = excelReader.readCoolDown();
 		System.out.println("The excel file is read");
-		
+
+
 		ArrayList<String[]> theOutput = new ArrayList<String[]>();
 		Analysor ana = new Analysor();
 		
@@ -206,13 +206,14 @@ public class Run {
 		} // end event
 
 		// write Excel
+
 		ExcelWriter writer;
 		try {
 			writer = new ExcelWriter();
 			writer.writeResult(theOutput);
 			writer.writeWorkers(allWorkers);
 			writer.finishFile();
-		} catch (WriteException | IOException e1) {
+		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}

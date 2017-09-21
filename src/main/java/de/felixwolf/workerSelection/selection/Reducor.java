@@ -40,8 +40,6 @@ public class Reducor {
 			//System.out.println(e.getDate() + ", " +  e.getId() + ": " + w.getName());
 			// get data from worker w
 			DatesCollection excludedDates = w.getExcludedDates();
-			ArrayList<Integer> excludedWholeDates = excludedDates.getWholeDates();
-			HashMap<Integer, Integer> excludedSpecificEvents = excludedDates.getSpecificEvents();
 			ArrayList<Integer> excludedEvents = w.getExcludedEvents();
 			//System.out.println(excludedEvents);
 			// data from event: event.date = date
@@ -59,18 +57,15 @@ public class Reducor {
 			}
 			
 			// worker does not work at that date
-			if (excludedWholeDates.contains(eDateDayOfYear)) {
+			if (excludedDates != null && excludedDates.containsDate(eDate)){ //excludedWholeDates.contains(eDateDayOfYear)) {
 				kickList.add(selectionGroup.indexOf(w));
 				//System.out.println("kicked (date): " + w.getName());
 			}
 			
 			// worker does not work at this specific event
-			if (excludedSpecificEvents.containsKey(eDateDayOfYear)) {
-				int excludedEventID = excludedSpecificEvents.get(eDateDayOfYear);
-				if (excludedEventID == eventId) {
+			if (excludedDates != null && excludedDates.containsEvent(eDate, eventId)){ //excludedSpecificEvents.containsKey(eDateDayOfYear)) {
 					kickList.add(selectionGroup.indexOf(w));
 					//System.out.println("kicked (sDate): " + w.getName());
-				}
 			}
 
 		}

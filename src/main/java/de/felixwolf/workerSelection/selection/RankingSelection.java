@@ -104,9 +104,17 @@ public class RankingSelection {
 			//System.out.println("New worker: " + w.getName());
 			int wID = w.getId();
 			DatesCollection preferedDates = w.getPreferedDates();
+
+			if(preferedDates == null){
+				continue;
+			}
+
+			int minDiff = preferedDates.smallestDiffToFutureDate(eDate);
+
+			/*
 			ArrayList<Integer> preferedWholeDates = preferedDates.getWholeDates();
 			HashMap<Integer, Integer> preferedSpecificEvents = preferedDates.getSpecificEvents();
-			
+
 			// determine smallest difference between current date and a future date
 			int minDiff = 1000;
 			if(!preferedWholeDates.isEmpty()){
@@ -135,6 +143,7 @@ public class RankingSelection {
 					}
 				}
 			}
+			*/
 			
 			//System.out.println("calulated mindiff: " + minDiff);
 			
