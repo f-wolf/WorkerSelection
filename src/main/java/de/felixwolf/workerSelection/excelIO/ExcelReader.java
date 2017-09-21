@@ -1,7 +1,9 @@
 package de.felixwolf.workerSelection.excelIO;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -38,11 +40,9 @@ public class ExcelReader {
 	private Sheet sheet_workers;
 	private Sheet sheet_settings;
 
-	Sheet sheet_events;
 	DateFormat format;
 	DateFormat justDateformat = new SimpleDateFormat("dd.MM.yyyy");
 
-	//WorkbookSettings newSetting; //todo ?
 	private int biggestCounter;
 	
 	private Date rangeStart = null;
@@ -57,28 +57,22 @@ public class ExcelReader {
 				workbook = new XSSFWorkbook(new File(path));
 			}
 			else {
-				workbook = new HSSFWorkbook(POIFSFileSystem.create(new File(path)));
+				InputStream inp = new FileInputStream(path);
+				workbook = WorkbookFactory.create(inp);
 			}
 
-			//Workbook.getWorkbook(new File(path));
-
-			sheet_tasks = workbook.getSheet("Tasks");
-			sheet_period = workbook.getSheet("Period");
-			sheet_regEvents = workbook.getSheet("RegularEvents");
-			sheet_specEvents = workbook.getSheet("SpecialEvents");
-			sheet_workers = workbook.getSheet("Workers");
-			sheet_settings = workbook.getSheet("Settings");
-
-
-
-			sheet_events = workbook.getSheetAt(1);
-		} catch (InvalidFormatException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			LOGGER.error("Error reading the input file. Please make sure it is a valid excel file.");
 			e.printStackTrace();
 		}
+
+		sheet_tasks = workbook.getSheet("Tasks");
+		sheet_period = workbook.getSheet("Period");
+		sheet_regEvents = workbook.getSheet("RegularEvents");
+		sheet_specEvents = workbook.getSheet("SpecialEvents");
+		sheet_workers = workbook.getSheet("Workers");
+		sheet_settings = workbook.getSheet("Settings");
 
 		TimeZone gmtZone = TimeZone.getTimeZone("CEST");
 		format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
@@ -127,22 +121,20 @@ public class ExcelReader {
 				break;
 			}
 
-			Task newTask = new Task();
-
 			// read task id
 			int column = 0;
 			Cell idCell = taskRow.getCell(column, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 			if(idCell == null){
-				LOGGER.warn("Empty id cell in non empty task row " + rowNum + 1 + ". No task is created for this row."); // TODO: +1 functional?
-				continue;
+				break;
 			}
 			int taskId;
 			try {
 				taskId = (int) idCell.getNumericCellValue();
 			} catch (Exception e){
-				LOGGER.error("Task ID in row " + taskRow +1 + " could not be read. No task is created for this row.");
-				continue;
+				break;
 			}
+
+			Task newTask = new Task();
 			newTask.setId(taskId);
 
 			// read task name
@@ -161,6 +153,8 @@ public class ExcelReader {
 
 		}while (tasksLeftToRead);
 
+		LOGGER.info("All tasks are read in. The last task is from line " + rowNum);
+
 		return allTasks;
 	}
 
@@ -176,25 +170,18 @@ public class ExcelReader {
 
 		// 1) get the exclusion data
 		DatesCollection exclusionData = readExclusionData();
-		LOGGER.debug("exclusion data was obtained");
-
 
 		// 2) get date range
 		readDateRange();
-		LOGGER.debug("date range was obtained");
 
 		// 3) derive regular events
 		ArrayList<Event> regularEvents = readRegularEvents(exclusionData);
-		LOGGER.debug("Regular events were read");
 
 		// 4) add special events
 		ArrayList<Event> specialEvents = readSpecialEvents();
-		LOGGER.debug("Special events were read");
-
 
 		// 5) merge events: combine both list and overwrite regular event if special event at same time
 		ArrayList<Event> allEvents = mergeEvents(regularEvents, specialEvents);
-		LOGGER.debug("Events were merged");
 
 		// sort the events
 		Collections.sort(allEvents, new Comparator<Event>() {
@@ -218,7 +205,7 @@ public class ExcelReader {
 		do{
 			Row row = sheet_period.getRow(rowNum);
 			if(row == null){
-				// empty row
+				// No more data is expected
 				break;
 			}
 
@@ -226,24 +213,26 @@ public class ExcelReader {
 			int column = 1;
 			Cell cell = row.getCell(column, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 			if(cell == null){
-				LOGGER.warn("Empty date cell in non empty excluded date row " + rowNum + 1 + ". No excluded date is created for this row."); // TODO: +1 functional?
-				rowNum++;
-				continue;
+				// No more data is expected
+				break;
 			}
 
 			DatesCollection datesOfRow = null;
 			try {
 				datesOfRow = readCellOfDates(cell);
 			} catch (ParseException e) {
-				LOGGER.error("An exclusion date was erroneous. It can be found in line " + rowNum + 1); // TODO printed correctly?
+				LOGGER.error("An exclusion date was erroneous. It can be found in line " + String.valueOf(rowNum + 1));
+				LOGGER.info("The program will be terminated. Please correct the error,");
 				LOGGER.error(e.getMessage());
 				e.printStackTrace();
+				System.exit(65);
 			}
 			excludedDates.addDateCollection(datesOfRow);
 
 			rowNum++;
-
 		}while (dataLeftToRead);
+
+		LOGGER.info("All exclusion dates are read in. The last exclusion date is from line " + rowNum);
 
 		return excludedDates;
 	}
@@ -266,6 +255,7 @@ public class ExcelReader {
 			System.exit(65);
 		}
 
+		LOGGER.info("The date range is read in.");
 		// get the range
 		//System.out.println(rangeStart);
 		//System.out.println(rangeEnd);
@@ -284,21 +274,24 @@ public class ExcelReader {
 			Row eventRow = sheet_regEvents.getRow(rowNum);
 
 			if(eventRow == null){
-				// empty row
-				eventsLeftToBeRead = false;
+				// empty row -> no more input is expected
 				break;
 			}
 
 			// get id
 			Cell idCell = eventRow.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 			if(idCell == null){
-				// TODO message
-				LOGGER.warn("The regular event in line " + rowNum + " has no ID.");
+				// empty id -> no more input is expected
 				break;
 			}
-			int regEventID = (int) idCell.getNumericCellValue();
-
-			//LOGGER.debug("current eventID " + regEventID);
+			int regEventID = -1;
+			try {
+				regEventID = (int) idCell.getNumericCellValue();
+			} catch (Exception e){
+				LOGGER.error("The regular event ID in line " + rowNum + " could not be parsed. Please correct it.");
+				e.printStackTrace();
+				System.exit(65);
+			}
 
 			String weekday = eventRow.getCell(2).getStringCellValue(); //sheet_regEvents.getCell(4 + i, 11).getContents();
 
@@ -409,6 +402,7 @@ public class ExcelReader {
 
 		} while (eventsLeftToBeRead);
 
+		LOGGER.info("All regular events are read in. The last regular event is from line " + rowNum);
 		return regularEvents;
 	}
 
@@ -426,22 +420,28 @@ public class ExcelReader {
 			Row eventRow = sheet_specEvents.getRow(rowNum);
 
 			if (eventRow == null) {
-				// empty row
-				eventsLeftToBeRead = false;
+				// empty row -> no more special events are expected
 				break;
 			}
 
 			// get id
 			Cell idCell = eventRow.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 			if (idCell == null) {
-				LOGGER.warn("The special event in line " + rowNum + " has no ID.");
+				// empty id cell -> no more special events are expected
 				break;
 			}
 
-			Event event1 = new Event();
+			int specEventID = -1;
+			try {
+				specEventID = (int) idCell.getNumericCellValue();
+			} catch (Exception e){
+				LOGGER.error("The special event ID in line " + rowNum + " could not be parsed. Please correct it.");
+				e.printStackTrace();
+				System.exit(65);
+			}
 
+			Event event1 = new Event();
 			// set ID and name
-			int specEventID = (int) idCell.getNumericCellValue();
 			event1.setId(specEventID);
 			String eventName = eventRow.getCell(1).getStringCellValue();
 			event1.setName(eventName);
@@ -507,6 +507,8 @@ public class ExcelReader {
 			specialEvents.add(event1);
 			rowNum++;
 		} while (eventsLeftToBeRead);
+
+		LOGGER.info("All special events are read in. The last special event is from line " + rowNum);
 
 		return specialEvents;
 	}
@@ -731,21 +733,27 @@ public class ExcelReader {
 			Row workerRow = sheet_workers.getRow(rowNum);
 
 			if (workerRow == null) {
-				// empty row
-				workersLeftToBeRead = false;
+				// empty row -> no more workers are expected
 				break;
 			}
 
-			Worker worker1 = new Worker();
 
 			Cell workerIDcell = workerRow.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 			if(workerIDcell == null){
-				LOGGER.warn("Empty worker id cell in non empty row " + rowNum + 1 + ". Skipping row");
-				rowNum++;
+				// empty id cell -> no more workers are expected
 				break;
 			}
 
-			int workerID = (int) workerIDcell.getNumericCellValue();
+			int workerID = -1;
+			try {
+				workerID = (int) workerIDcell.getNumericCellValue();
+			} catch (Exception e){
+				LOGGER.error("The worker ID in line " + rowNum + " could not be parsed. Please correct it.");
+				e.printStackTrace();
+				System.exit(65);
+			}
+
+			Worker worker1 = new Worker();
 			worker1.setId(workerID);
 			String workerName = workerRow.getCell(1).getStringCellValue();
 			worker1.setName(workerName);
@@ -831,6 +839,7 @@ public class ExcelReader {
 			rowNum++;
 		} while (workersLeftToBeRead);
 
+		LOGGER.info("All workers are read in. The last worker is from line " + rowNum);
 		return allWorkers;
 	}
 	
