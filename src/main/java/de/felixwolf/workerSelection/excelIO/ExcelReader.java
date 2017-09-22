@@ -2,7 +2,6 @@ package de.felixwolf.workerSelection.excelIO;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -15,12 +14,8 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 
 import de.felixwolf.workerSelection.dataTypes.*;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
@@ -62,7 +57,6 @@ public class ExcelReader {
 			}
 
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			LOGGER.error("Error reading the input file. Please make sure it is a valid excel file.");
 			e.printStackTrace();
 		}
@@ -78,12 +72,6 @@ public class ExcelReader {
 		format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 		format.setTimeZone(gmtZone);
 		justDateformat.setTimeZone(gmtZone);
-
-		/*
-		newSetting = new WorkbookSettings();
-		Locale l = new Locale("de");
-		newSetting.setLocale(l);
-		*/
 
 		biggestCounter = 0;
 	}
@@ -104,7 +92,6 @@ public class ExcelReader {
 		}
 		return false;
 	}
-
 
 	public ArrayList<Task> readTasks() {
 		// puts all main.java.de.felixwolf.workerSelection.dataTypes.Task into an ArrayList
@@ -163,10 +150,6 @@ public class ExcelReader {
 
 	public ArrayList<Event> readEvents() {
 		// puts all Events into an ArrayList
-
-		// TimeZone gmtZone = TimeZone.getTimeZone("GMT");
-		// SimpleDateFormat format = new SimpleDateFormat("dd.mm.yyyy hh:mm");
-		// format.setTimeZone(gmtZone);
 
 		// 1) get the exclusion data
 		DatesCollection exclusionData = readExclusionData();
@@ -257,9 +240,6 @@ public class ExcelReader {
 
 		LOGGER.info("The date range is read in.");
 		// get the range
-		//System.out.println(rangeStart);
-		//System.out.println(rangeEnd);
-		//System.out.println("Time diff: " + getDateDiff(rangeStart, rangeEnd, TimeUnit.DAYS));
 	}
 
 
@@ -843,12 +823,6 @@ public class ExcelReader {
 		return allWorkers;
 	}
 	
-
-	
-	
-
-
-
 	private ArrayList<String> breakUpaString(String unserperatedString, String seperator) {
 		ArrayList<String> tempArrayList1 = new ArrayList<String>();
 		ArrayList<String> tempArrayList2 = new ArrayList<String>();
@@ -885,19 +859,6 @@ public class ExcelReader {
 
 	public int readCoolDown() {
 		return (int) sheet_settings.getRow(1).getCell(1).getNumericCellValue();
-	}
-	
-	public static long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
-	    long diffInMillies = date2.getTime() - date1.getTime();
-	    return timeUnit.convert(diffInMillies,TimeUnit.MILLISECONDS);
-	}
-
-	private int calcDayOfYear(Date date){
-		int dateDdayOfYear = 0;
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(date);
-		dateDdayOfYear = (cal.get(Calendar.DAY_OF_YEAR));
-		return dateDdayOfYear;
 	}
 	
 	public int getBiggestCounter(){

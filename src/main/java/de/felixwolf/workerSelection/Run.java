@@ -121,7 +121,6 @@ public class Run {
 				ArrayList<Worker> selectionGroup4 = red0.reduceAlreadyDidSameTask(workerList, taskID, jobList, selectionGroup3);
 				//System.out.println("size g4: " + selectionGroup4.size());
 
-
 				// if somebody is already doing a job, give him another one if it is different
 				worker = pSelect.alreadyActiveWorker(workerList, taskID, jobList, selectionGroup4);
 				if(worker != -1){
@@ -147,7 +146,6 @@ public class Run {
 					// write information
 					workerList = addWorker2workerList(worker, taskID, workerList, jobList);
 					//System.out.println("datePref" + Arrays.toString(workerList));
-
 					continue;
 				}
 
