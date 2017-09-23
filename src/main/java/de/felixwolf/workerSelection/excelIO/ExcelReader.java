@@ -205,7 +205,7 @@ public class ExcelReader {
 
 			DatesCollection datesOfRow = null;
 			try {
-				datesOfRow = readCellOfDates(cell);
+				datesOfRow = readCellOfDates(cell, null);
 			} catch (ParseException e) {
 				LOGGER.error("An exclusion date was erroneous. It can be found in line " + String.valueOf(rowNum + 1));
 				LOGGER.info("The program will be terminated. Please correct the error,");
@@ -435,11 +435,10 @@ public class ExcelReader {
 			Calendar cFinal2 = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
 			Date date = eventRow.getCell(2).getDateCellValue();
 
-			if (rangeStart != null && rangeEnd != null && (date.before(rangeStart) || date.after(rangeEnd))) {
-				LOGGER.info("Event " + eventName + " with the id " + specEventID + " is outside of the defined range. It is ignored.");
+			String locationInfo = "special event " + eventName + " in line " + String.valueOf(rowNum + 1);
+			if(!isDateInRange(date, locationInfo)){
 				continue;
 			}
-
 
 			// get start time in hours and minutes
 			Date time2 = eventRow.getCell(3).getDateCellValue();
@@ -587,7 +586,7 @@ public class ExcelReader {
 		return id;
 	}
 
-	private DatesCollection readCellOfDates(Cell cell)  throws ParseException{
+	private DatesCollection readCellOfDates(Cell cell, String location)  throws ParseException{
 
 		if(cell == null){
 			return null;
@@ -597,7 +596,10 @@ public class ExcelReader {
 
 		if (cell.getCellTypeEnum() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)){
 			// The cell contains a single date
-			datesOfCell.addDate(cell.getDateCellValue());
+
+			Date singgleDate = cell.getDateCellValue();
+			isDateInRange(singgleDate, location);
+			datesOfCell.addDate(singgleDate);
 		}
 		else {
 			String stringOfDates = cell.getStringCellValue();
@@ -632,7 +634,8 @@ public class ExcelReader {
 					} catch (ParseException e){
 						throw new ParseException("One input of the range was not a date: " + stringDate, i + 1);
 					}
-
+					isDateInRange(tempDate, location);
+					isDateInRange(end, location);
 					while (tempDate.before(end)) {
 
 						datesOfCell.addDate(tempDate);
@@ -660,6 +663,7 @@ public class ExcelReader {
 					} catch (ParseException e){
 						throw new ParseException("The date of the following event could not be parsed: " + stringDate, i + 1);
 					}
+					isDateInRange(date, location);
 
 					int eventID;
 					try {
@@ -669,7 +673,6 @@ public class ExcelReader {
 					}
 
 					datesOfCell.addEvent(date, eventID);
-
 				}
 
 				else {
@@ -680,6 +683,7 @@ public class ExcelReader {
 					} catch (ParseException e) {
 						throw new ParseException("The erroneous input was '" + stringDate + "'.", i + 1);
 					}
+					isDateInRange(date, location);
 					datesOfCell.addDate(date);
 				}
 			}
@@ -687,6 +691,14 @@ public class ExcelReader {
 		return datesOfCell;
 	}
 
+	private boolean isDateInRange(Date date, String location){
+
+		if (rangeStart != null && rangeEnd != null && (date.before(rangeStart) || date.after(rangeEnd))){
+			LOGGER.warn(date + " is outside of the defined range. It can be found at " + location);
+			return false;
+		}
+		return true;
+	}
 
 	private ArrayList<Integer> readCellOfIntegers(Cell cell) throws ParseException {
 
@@ -768,7 +780,6 @@ public class ExcelReader {
 
 		do {
 			Row workerRow = sheet_workers.getRow(rowNum);
-
 			if (workerRow == null) {
 				// empty row -> no more workers are expected
 				break;
@@ -833,8 +844,9 @@ public class ExcelReader {
 			// prefered dates
 			Cell preferedDatesCell = workerRow.getCell(5, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 			DatesCollection preferedDates = null;
+			String locationInfo = "preferred dates of " + workerName;
 			try {
-				preferedDates = readCellOfDates(preferedDatesCell);
+				preferedDates = readCellOfDates(preferedDatesCell, locationInfo);
 			} catch (ParseException e) {
 				LOGGER.error("A prefered date of " + workerName + " could not be read.");
 				LOGGER.error(e.getMessage());
@@ -846,8 +858,9 @@ public class ExcelReader {
 			// excluded dates
 			Cell excludedDatesCell = workerRow.getCell(6);
 			DatesCollection excludedDates = null;
+			locationInfo = "excluded dates of " + workerName;
 			try {
-				excludedDates = readCellOfDates(excludedDatesCell);
+				excludedDates = readCellOfDates(excludedDatesCell, locationInfo);
 			} catch (ParseException e) {
 				LOGGER.error("An excluded date of " + workerName + " could not be read.");
 				LOGGER.error(e.getMessage());
@@ -897,40 +910,6 @@ public class ExcelReader {
 		return allWorkers;
 	}
 	
-	private ArrayList<String> breakUpaString(String unserperatedString, String seperator) {
-		ArrayList<String> tempArrayList1 = new ArrayList<String>();
-		ArrayList<String> tempArrayList2 = new ArrayList<String>();
-		CharSequence cs = seperator;
-
-		while (unserperatedString.contains(cs)) {
-			tempArrayList1.add(unserperatedString.substring(0,
-					unserperatedString.indexOf(seperator)));
-			unserperatedString = unserperatedString
-					.substring(unserperatedString.indexOf(seperator) + 1);
-		}
-		tempArrayList1.add(unserperatedString);
-
-		// cleanup
-		for (String str : tempArrayList1) {
-			//System.out.println(str);
-			String str2;
-			/*
-			if (str.contains(" ")) {
-				str2 = str.replace(" ", "");
-			} else {
-				str2 = str;
-			}
-			*/
-
-			str2 = str.replaceAll("\\s+","");
-			//System.out.println(str2);
-			tempArrayList2.add(str2);
-
-		}
-
-		return tempArrayList2;
-	}
-
 	public int readCoolDown() {
 		return (int) sheet_settings.getRow(1).getCell(1).getNumericCellValue();
 	}
