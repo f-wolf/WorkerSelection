@@ -94,7 +94,7 @@ public class ExcelReader {
 	}
 
 	public ArrayList<Task> readTasks() {
-		// puts all main.java.de.felixwolf.workerSelection.dataTypes.Task into an ArrayList
+		// puts all tasks into an ArrayList
 		ArrayList<Task> allTasks = new ArrayList<Task>();
 
 		int rowNum = 1;
@@ -104,21 +104,24 @@ public class ExcelReader {
 			Row taskRow = sheet_tasks.getRow(rowNum);
 			if(taskRow == null){
 				// empty row
-				tasksLeftToRead = false;
 				break;
 			}
 
 			// read task id
 			int column = 0;
 			Cell idCell = taskRow.getCell(column, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-			if(idCell == null){
-				break;
-			}
-			int taskId;
+			int taskId = -1;
+
 			try {
-				taskId = (int) idCell.getNumericCellValue();
-			} catch (Exception e){
+				taskId = readCellOfId(idCell);
+			} catch (NullPointerException e){
+				// The cell appears to be empty -> all tasks are read in.
 				break;
+			} catch (ParseException e) {
+				// The cell content could not be parsed -> program will exit
+				LOGGER.error("The task ID in line " + String.valueOf(rowNum + 1) + " could not be parsed. Please correct the input");
+				e.printStackTrace();
+				System.exit(65);
 			}
 
 			Task newTask = new Task();
@@ -260,15 +263,15 @@ public class ExcelReader {
 
 			// get id
 			Cell idCell = eventRow.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-			if(idCell == null){
-				// empty id -> no more input is expected
-				break;
-			}
 			int regEventID = -1;
 			try {
-				regEventID = (int) idCell.getNumericCellValue();
-			} catch (Exception e){
-				LOGGER.error("The regular event ID in line " + rowNum + " could not be parsed. Please correct it.");
+				regEventID = readCellOfId(idCell);
+			} catch (NullPointerException e){
+				// The cell appears to be empty -> all regular events are read in.
+				break;
+			} catch (ParseException e) {
+				// The cell content could not be parsed -> program will exit
+				LOGGER.error("The regular event ID in line " + String.valueOf(rowNum + 1) + " could not be parsed. Please correct the input");
 				e.printStackTrace();
 				System.exit(65);
 			}
@@ -395,16 +398,15 @@ public class ExcelReader {
 
 			// get id
 			Cell idCell = eventRow.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-			if (idCell == null) {
-				// empty id cell -> no more special events are expected
-				break;
-			}
-
 			int specEventID = -1;
 			try {
-				specEventID = (int) idCell.getNumericCellValue();
-			} catch (Exception e){
-				LOGGER.error("The special event ID in line " + rowNum + " could not be parsed. Please correct it.");
+				specEventID = readCellOfId(idCell);
+			} catch (NullPointerException e){
+				// The cell appears to be empty -> all special events are read in.
+				break;
+			} catch (ParseException e) {
+				// The cell content could not be parsed -> program will exit
+				LOGGER.error("The special event ID in line " + String.valueOf(rowNum + 1) + " could not be parsed. Please correct the input");
 				e.printStackTrace();
 				System.exit(65);
 			}
@@ -510,6 +512,52 @@ public class ExcelReader {
 		return allEvents;
 	}
 
+	/**
+	 * Method to read the the id of a given cell.
+	 * @param idCell 						The cell which is to be read
+	 * @return 								The id as integer
+	 * @throws ParseException				Thrown if content cannot be parsed
+	 * @throws NullPointerException			Thrown if cell appears to be empty
+	 */
+	private int readCellOfId(Cell idCell) throws ParseException, NullPointerException {
+
+		int id = 0;
+
+		if(idCell == null){
+			throw new NullPointerException();
+		}
+		if(!idCell.getCellTypeEnum().equals(CellType.NUMERIC)){
+			String cellContent;
+			try{
+				cellContent = idCell.getStringCellValue();
+			} catch (Exception e){
+				throw new ParseException("The cell does not contain a numeric value.", 0);
+			}
+
+			if(cellContent.matches("\\s+")){
+				// the cell content consists of only of spaces -> can be considered as empty
+				throw new NullPointerException();
+			}
+			cellContent = cellContent.replaceAll("\\s+", "");
+			try {
+				id = Integer.parseInt(cellContent);
+			} catch (NumberFormatException e){
+				LOGGER.error("'" + cellContent + "' could not be parsed. ");
+				e.printStackTrace();
+				throw new ParseException("The cell does not contain a numeric value.", 0);
+			}
+			return id;
+		}
+
+		try {
+			id = (int) idCell.getNumericCellValue();
+		} catch (Exception e){
+			LOGGER.debug("id parse exception");
+			e.printStackTrace();
+			throw new ParseException("The cell does not contain a numeric value.", 0);
+		}
+		return id;
+	}
 
 	private DatesCollection readCellOfDates(Cell cell)  throws ParseException{
 
@@ -702,18 +750,17 @@ public class ExcelReader {
 				break;
 			}
 
-
+			// get id
 			Cell workerIDcell = workerRow.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-			if(workerIDcell == null){
-				// empty id cell -> no more workers are expected
-				break;
-			}
-
 			int workerID = -1;
 			try {
-				workerID = (int) workerIDcell.getNumericCellValue();
-			} catch (Exception e){
-				LOGGER.error("The worker ID in line " + rowNum + " could not be parsed. Please correct it.");
+				workerID = readCellOfId(workerIDcell);
+			} catch (NullPointerException e){
+				// The cell appears to be empty -> all workers are read in.
+				break;
+			} catch (ParseException e) {
+				// The cell content could not be parsed -> program will exit
+				LOGGER.error("The worker ID in line " + String.valueOf(rowNum + 1) + " could not be parsed. Please correct the input");
 				e.printStackTrace();
 				System.exit(65);
 			}

@@ -46,7 +46,7 @@ public class Run {
 		int biggestCounter = excelReader.getBiggestCounter(); // has to be after readEvents
 		allWorkers = excelReader.readWorkers(biggestCounter);
 		int coolDownTime = excelReader.readCoolDown();
-		LOGGER.info("The excel file is read");
+		LOGGER.info("The excel file is read. Please make sure that all data was read in completely");
 	}
 
 	private static void processData(){
