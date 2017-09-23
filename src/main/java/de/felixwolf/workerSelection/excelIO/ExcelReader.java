@@ -342,27 +342,16 @@ public class ExcelReader {
 				//System.out.println(format.format(theDate));
 				event0.setDate(theDate);
 
-				event0.setComment(eventRow.getCell(6).getStringCellValue()); //sheet_regEvents.getCell(4 + i, 13).getContents());
+				event0.setComment(eventRow.getCell(6).getStringCellValue());
 
 				// extract tasks for event
-				String tasksString = eventRow.getCell(4).getStringCellValue(); // sheet_regEvents.getCell(4 + i, 14).getContents();
-				ArrayList<String> tasksStringList = breakUpaString(tasksString, ";"); // TODO
-				ArrayList<Integer> eventTasks = new ArrayList<Integer>();
-
-				for (String s : tasksStringList) {
-					// System.out.println(s);
-					eventTasks.add(Integer.parseInt(s));
-				}
-				// sort the tasks
-				Collections.sort(eventTasks);
+				Cell cellOfRegEventTasks = eventRow.getCell(4);
+				ArrayList<Integer> eventTasks = readCellOfIntegers(cellOfRegEventTasks);
 				event0.setEventTasks(eventTasks);
 
 				// extract counters for event
 				Cell cellOfIntegers = eventRow.getCell(5);
 				ArrayList<Integer> eventCounters = readCellOfIntegers(cellOfIntegers);
-
-				// sort the counters
-				Collections.sort(eventCounters);
 
 				if(eventCounters.get(eventCounters.size() - 1) > biggestCounter){
 					biggestCounter = eventCounters.get(eventCounters.size() - 1);
@@ -464,17 +453,11 @@ public class ExcelReader {
 			// extract tasks for event
 			Cell cellOfTasks = eventRow.getCell(4);
 			ArrayList<Integer> eventTasks = readCellOfIntegers(cellOfTasks);
-
-			// sort the tasks and add them to the event
-			Collections.sort(eventTasks);
 			event1.setEventTasks(eventTasks);
 
-			// extract counters for event // TODO check
+			// extract counters for event
 			Cell cellOfIntegers = eventRow.getCell(5);
 			ArrayList<Integer> eventCounters = readCellOfIntegers(cellOfIntegers);
-
-			// sort the counters
-			Collections.sort(eventCounters);
 
 			if(eventCounters.get(eventCounters.size() - 1) > biggestCounter){
 				biggestCounter = eventCounters.get(eventCounters.size() - 1);
@@ -668,6 +651,7 @@ public class ExcelReader {
 		ArrayList<Integer> intsOfCell = new ArrayList<>();
 
 		if(cell.getCellTypeEnum().equals(CellType.NUMERIC)){
+			// there is only a single integer value in the cell
 			int singleInt = (int) cell.getNumericCellValue();
 			intsOfCell.add(singleInt);
 			return intsOfCell;
@@ -694,6 +678,7 @@ public class ExcelReader {
 				intsOfCell.add(Integer.parseInt(str));
 			}
 		}
+		Collections.sort(intsOfCell);
 		return intsOfCell;
 	}
 

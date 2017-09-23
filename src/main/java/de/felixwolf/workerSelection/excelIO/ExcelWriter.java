@@ -84,7 +84,7 @@ public class ExcelWriter {
 			// write last active date
 			Date lastActive = allWorkers.get(i).getLastDate();
 			Cell dateCell = row.createCell(1);
-			dateCell.setCellValue(lastActive);// todo correctly formated?
+			dateCell.setCellValue(lastActive);
 			dateCell.setCellStyle(cellDateStyle);
 
 			// write the counters
