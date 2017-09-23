@@ -78,9 +78,9 @@ public class ExcelReader {
 
 	private boolean isXLSX(String path){
 
-		String [] splittedPath = path.split("\\.");
+		String [] splitPath = path.split("\\.");
 
-		String fileExtension = splittedPath[splittedPath.length-1];
+		String fileExtension = splitPath[splitPath.length-1];
 		fileExtension = fileExtension.toLowerCase();
 
 		switch (fileExtension){
@@ -349,12 +349,26 @@ public class ExcelReader {
 
 				// extract tasks for event
 				Cell cellOfRegEventTasks = eventRow.getCell(4);
-				ArrayList<Integer> eventTasks = readCellOfIntegers(cellOfRegEventTasks);
+				ArrayList<Integer> eventTasks = null;
+				try {
+					eventTasks = readCellOfIntegers(cellOfRegEventTasks);
+				} catch (ParseException e) {
+					LOGGER.error("The list of tasks for the regular event in line " + String.valueOf(rowNum + 1) + " could not be read");
+					e.printStackTrace();
+					System.exit(65);
+				}
 				event0.setEventTasks(eventTasks);
 
 				// extract counters for event
 				Cell cellOfIntegers = eventRow.getCell(5);
-				ArrayList<Integer> eventCounters = readCellOfIntegers(cellOfIntegers);
+				ArrayList<Integer> eventCounters = null;
+				try {
+					eventCounters = readCellOfIntegers(cellOfIntegers);
+				} catch (ParseException e) {
+					LOGGER.error("The list of counters for the regular event in line " + String.valueOf(rowNum + 1) + " could not be read");
+					e.printStackTrace();
+					System.exit(65);
+				}
 
 				if(eventCounters.get(eventCounters.size() - 1) > biggestCounter){
 					biggestCounter = eventCounters.get(eventCounters.size() - 1);
@@ -454,12 +468,26 @@ public class ExcelReader {
 			event1.setComment(eventRow.getCell(6).getStringCellValue());
 			// extract tasks for event
 			Cell cellOfTasks = eventRow.getCell(4);
-			ArrayList<Integer> eventTasks = readCellOfIntegers(cellOfTasks);
+			ArrayList<Integer> eventTasks = null;
+			try {
+				eventTasks = readCellOfIntegers(cellOfTasks);
+			} catch (ParseException e) {
+				LOGGER.error("The list of tasks for the special event in line " + String.valueOf(rowNum + 1) + " could not be read");
+				e.printStackTrace();
+				System.exit(65);
+			}
 			event1.setEventTasks(eventTasks);
 
 			// extract counters for event
 			Cell cellOfIntegers = eventRow.getCell(5);
-			ArrayList<Integer> eventCounters = readCellOfIntegers(cellOfIntegers);
+			ArrayList<Integer> eventCounters = null;
+			try {
+				eventCounters = readCellOfIntegers(cellOfIntegers);
+			} catch (ParseException e) {
+				LOGGER.error("The list of counters for the special event in line " + String.valueOf(rowNum + 1) + " could not be read");
+				e.printStackTrace();
+				System.exit(65);
+			}
 
 			if(eventCounters.get(eventCounters.size() - 1) > biggestCounter){
 				biggestCounter = eventCounters.get(eventCounters.size() - 1);
@@ -660,42 +688,8 @@ public class ExcelReader {
 	}
 
 
-	private ArrayList<Integer> readCellOfIntegers(Cell cell){
+	private ArrayList<Integer> readCellOfIntegers(Cell cell) throws ParseException {
 
-		// TODO error handling
-
-		/*
-					String prefEventsString = sheet_workers.getCell(4, 1 + i).getContents();
-			ArrayList<String> prefEventsStringList = breakUpaString(prefEventsString, ";");
-			ArrayList<Integer> preferedEvents = new ArrayList<Integer>();
-
-			for (String s : prefEventsStringList) {
-				// System.out.println(s);
-				if(s.isEmpty()){
-					preferedEvents.add(-1);
-				}
-				else if(s.contains("-")){
-					ArrayList<String> prefEventRange = breakUpaString(s, "-");
-					if(prefEventRange.size() == 2) {
-						int prefEventRangeStart = Integer.parseInt(prefEventRange.get(0));
-						int prefEventRangeEnd = Integer.parseInt(prefEventRange.get(1));
-						if(prefEventRangeStart > prefEventRangeEnd){
-							System.err.println("Preferred ID range start is bigger than end -> this will result in an error");
-						}
-						while (prefEventRangeStart <= prefEventRangeEnd){
-							preferedEvents.add(prefEventRangeStart);
-							prefEventRangeStart++;
-						}
-					}
-					else{
-						System.err.println(worker1.getName() + ": Found a separator in preferred EventIds, but not 2 numbers");
-					}
-				}
-				else{
-					preferedEvents.add(Integer.parseInt(s));
-				}
-			}
-		 */
 		ArrayList<Integer> intsOfCell = new ArrayList<>();
 
 		if(cell.getCellTypeEnum().equals(CellType.NUMERIC)){
@@ -705,17 +699,40 @@ public class ExcelReader {
 			return intsOfCell;
 		}
 
-		String cellStr = cell.getStringCellValue();
+		String cellStr;
+		try {
+			cellStr = cell.getStringCellValue();
+		} catch (Exception e){
+			e.printStackTrace();
+			throw new ParseException("The cell content could not be read as String", 0);
+		}
+
 		cellStr = cellStr.replaceAll("\\s+","");
 		cellStr = cellStr.replaceAll("–", "-");
-		String[] splitted = cellStr.split(";");
+		String[] split = cellStr.split(";");
 
-		for(String str:splitted){
+		for(String str:split){
 
 			if(str.contains("-")){
 				String[] range = str.split("-");
-				int rangeStart = Integer.parseInt(range[0]);
-				int rangeEnd = Integer.parseInt(range[1]);
+
+				if(range.length != 2){
+					throw new ParseException("The range " + str + "' does not contain two values.", 0);
+				}
+
+				int rangeStart;
+				int rangeEnd;
+
+				try {
+					rangeStart = Integer.parseInt(range[0]);
+					rangeEnd = Integer.parseInt(range[1]);
+				} catch (NumberFormatException e){
+					throw new ParseException("At least one value of the range '" + str + "' could not be parsed.", 0);
+				}
+
+				if(rangeEnd < rangeStart){
+					throw new ParseException("The end date of the range '" + str + "' is before the start date.", 0);
+				}
 
 				for(int i = rangeStart; i <= rangeEnd; i++){
 					intsOfCell.add(i);
@@ -723,7 +740,14 @@ public class ExcelReader {
 			}
 
 			else {
-				intsOfCell.add(Integer.parseInt(str));
+
+				int singleInt;
+				try {
+					singleInt = Integer.parseInt(str);
+				} catch (NumberFormatException e){
+					throw new ParseException(str + " could not be parsed.", 0);
+				}
+				intsOfCell.add(singleInt);
 			}
 		}
 		Collections.sort(intsOfCell);
@@ -773,17 +797,37 @@ public class ExcelReader {
 
 			// extract tasks for worker
 			Cell tasksCell = workerRow.getCell(2);
-			ArrayList<Integer> possibleTasks = readCellOfIntegers(tasksCell);
+			ArrayList<Integer> possibleTasks = null;
+			try {
+				possibleTasks = readCellOfIntegers(tasksCell);
+			} catch (ParseException e) {
+				LOGGER.error("The list of possible task for " + workerName + " in line " + String.valueOf(rowNum + 1) + " could not be read");
+				e.printStackTrace();
+				System.exit(65);
+			}
 			worker1.setPossibleTasks(possibleTasks);
 
 			// prefered events
 			Cell preferedEventsCell = workerRow.getCell(3);
-			ArrayList<Integer> preferedEvents = readCellOfIntegers(preferedEventsCell);
-			worker1.setPreferedEvents(preferedEvents);
+			ArrayList<Integer> preferredEvents = null;
+			try {
+				preferredEvents = readCellOfIntegers(preferedEventsCell);
+			} catch (ParseException e) {
+				LOGGER.error("The list of preferred events for " + workerName + " in line " + String.valueOf(rowNum + 1) + " could not be read");
+				e.printStackTrace();
+				System.exit(65);			}
+			worker1.setPreferedEvents(preferredEvents);
 
 			// excluded events
 			Cell excludedEventsCell = workerRow.getCell(4);
-			ArrayList<Integer> excludedEvents = readCellOfIntegers(excludedEventsCell);
+			ArrayList<Integer> excludedEvents = null;
+			try {
+				excludedEvents = readCellOfIntegers(excludedEventsCell);
+			} catch (ParseException e) {
+				LOGGER.error("The list of excluded events for " + workerName + " in line " + String.valueOf(rowNum + 1) + " could not be read");
+				e.printStackTrace();
+				System.exit(65);
+			}
 			worker1.setExcludedEvents(excludedEvents);
 
 			// prefered dates
@@ -845,8 +889,6 @@ public class ExcelReader {
 			worker1.setLastDate(lastDate);
 
 			allWorkers.add(worker1);
-
-
 
 			rowNum++;
 		} while (workersLeftToBeRead);

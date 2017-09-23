@@ -60,9 +60,9 @@ public class DatesCollection {
 
 	private Date getDateFromStringEvent(String stringEvent){
 
-		String [] splitted = stringEvent.split(EVENTSEPERATOR);
+		String [] split = stringEvent.split(EVENTSEPERATOR);
 		try {
-			return dateFormat.parse(splitted[0]);
+			return dateFormat.parse(split[0]);
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
