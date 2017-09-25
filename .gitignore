@@ -6,5 +6,6 @@ bin/
 WorkerSelection.iml
 *output.xls
 *output.xlsx
+input.xlsx
 jxl.jar
 archive/
