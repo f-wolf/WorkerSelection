@@ -44,7 +44,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>de.felixwolf.masProdSim.Start</mainClass>
+                            <mainClass>de.felixwolf.workerSelection.Run</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
