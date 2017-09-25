@@ -1,4 +1,4 @@
-#WorkerSelection #
+# WorkerSelection #
 
 A tool to create work schedules which satisfy several constraints.
 
