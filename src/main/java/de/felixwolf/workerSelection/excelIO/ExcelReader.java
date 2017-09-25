@@ -345,7 +345,16 @@ public class ExcelReader {
 				//System.out.println(format.format(theDate));
 				event0.setDate(theDate);
 
-				event0.setComment(eventRow.getCell(6).getStringCellValue());
+				Cell regEventCommentCell = eventRow.getCell(6, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				String regEventComment = " ";
+				if(regEventCommentCell != null){
+					try{
+						regEventComment = regEventCommentCell.getStringCellValue();
+					} catch (Exception e){
+						// do nothing, comment stays empty
+					}
+				}
+				event0.setComment(regEventComment);
 
 				// extract tasks for event
 				Cell cellOfRegEventTasks = eventRow.getCell(4);
@@ -826,7 +835,10 @@ public class ExcelReader {
 			} catch (ParseException e) {
 				LOGGER.error("The list of preferred events for " + workerName + " in line " + String.valueOf(rowNum + 1) + " could not be read");
 				e.printStackTrace();
-				System.exit(65);			}
+				System.exit(65);
+			} catch (NullPointerException e){
+				preferredEvents = new ArrayList<Integer>();
+			}
 			worker1.setPreferedEvents(preferredEvents);
 
 			// excluded events
@@ -838,6 +850,8 @@ public class ExcelReader {
 				LOGGER.error("The list of excluded events for " + workerName + " in line " + String.valueOf(rowNum + 1) + " could not be read");
 				e.printStackTrace();
 				System.exit(65);
+			} catch (NullPointerException e){
+				excludedEvents = new ArrayList<Integer>();
 			}
 			worker1.setExcludedEvents(excludedEvents);
 
