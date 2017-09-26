@@ -205,7 +205,7 @@ public class ExcelReader {
 
 			DatesCollection datesOfRow = null;
 			try {
-				datesOfRow = readCellOfDates(cell, null);
+				datesOfRow = readCellOfDates(cell, "Exclusion data, row " + String.valueOf(rowNum + 1));
 			} catch (ParseException e) {
 				LOGGER.error("An exclusion date was erroneous. It can be found in line " + String.valueOf(rowNum + 1));
 				LOGGER.info("The program will be terminated. Please correct the error,");
@@ -638,8 +638,8 @@ public class ExcelReader {
 					Date end;
 
 					try {
-						tempDate = justDateformat.parse(range[0]);
-						end = justDateformat.parse(range[1]);
+						tempDate = parseSingleDateString(range[0], location);
+						end = parseSingleDateString(range[1], location);
 					} catch (ParseException e){
 						throw new ParseException("One input of the range was not a date: " + stringDate, i + 1);
 					}
@@ -668,7 +668,7 @@ public class ExcelReader {
 
 					Date date;
 					try {
-						date = justDateformat.parse(eventInfo[0]);
+						date = parseSingleDateString(eventInfo[0], location);
 					} catch (ParseException e){
 						throw new ParseException("The date of the following event could not be parsed: " + stringDate, i + 1);
 					}
@@ -688,7 +688,7 @@ public class ExcelReader {
 					// this is an ordinary date
 					Date date;
 					try {
-						date = justDateformat.parse(stringDate);
+						date = parseSingleDateString(stringDate, location);
 					} catch (ParseException e) {
 						throw new ParseException("The erroneous input was '" + stringDate + "'.", i + 1);
 					}
@@ -699,6 +699,27 @@ public class ExcelReader {
 		}
 		return datesOfCell;
 	}
+
+	/** Method to parse a single date given as String.
+	 *
+	 * Dateformat.parse ignores all characters after the date is parsed. This can lead to undesired effects if the user
+	 * makes an input error. E.g. typing a comma instead of semicolon: "12.12.2018, 14.12.2018" would be parsed as only
+	 * the 12.12.2018 and the second date would get lost.
+	 *
+	 * @param dateString String of date formatted as dd.mm.yyyy
+	 * @return The date
+	 * @throws ParseException
+	 */
+	private Date parseSingleDateString(String dateString, String location) throws ParseException {
+
+		if(!dateString.matches("\\d{2}\\.\\d{2}\\.\\d{4}")){
+			LOGGER.warn("The date input '" + dateString + "' does not match the default date format of 'dd.mm.yyyy'! " +
+					"Error possible, See: " + location);
+		}
+
+		return justDateformat.parse(dateString);
+	}
+
 
 	private boolean isDateInRange(Date date, String location){
 
