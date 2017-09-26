@@ -31,21 +31,17 @@ public class Run {
 	public static void main(String[] args) {
 
 		readInputFile();
-
 		processData();
-
 		writeOutputFile();
 	}
 
-
 	private static void readInputFile(){
-
 		ExcelReader excelReader = new ExcelReader(inputPath);
 		allTasks = excelReader.readTasks();
 		allEvents = excelReader.readEvents();
 		int biggestCounter = excelReader.getBiggestCounter(); // has to be after readEvents
 		allWorkers = excelReader.readWorkers(biggestCounter);
-		int coolDownTime = excelReader.readCoolDown();
+		coolDownTime = excelReader.readCoolDown();
 		LOGGER.info("The excel file is read. Please make sure that all data was read in completely");
 	}
 
@@ -58,11 +54,10 @@ public class Run {
 
 		// create legend and add to output
 		String [] legend = ana.createLegend(jobList, allTasks, columnsWithText);
-		//System.out.println(Arrays.toString(legend));
 		theOutput.add(legend);
 
 		// calculate the week of year for the first event
-		// -> enables break after each week
+		// -> creates an empty line after each week
 		int lastWeek = ana.calcWeekOfYear(allEvents.get(0));
 
 		// selection
@@ -80,8 +75,6 @@ public class Run {
 			// event information
 			Date eDate = e.getDate();
 			int eID	= e.getId();
-			//System.out.println(" ");
-			//System.out.println(eDate + " -- " + eID);
 
 			// tools
 			Reducor red0 = new Reducor();
@@ -90,7 +83,6 @@ public class Run {
 			// new line?
 			int currentWeek = ana.calcWeekOfYear(e);
 			if (currentWeek != lastWeek) {
-				// System.out.println("Diff with weeks");
 				lastWeek = currentWeek;
 				String[] emtpty = { "", "" };
 				theOutput.add(emtpty);
@@ -102,37 +94,31 @@ public class Run {
 			for (int taskID : e.getEventTasks()) {
 
 				int worker = -1;
-
+				// create pool of all workers and remove the unsuitable workers in the following steps
 				ArrayList<Worker> selectionGroup0 = allWorkers;
-				//System.out.println("size g0: " + selectionGroup0.size());
+
 				// remove workers from selection group who are not suitable (wrong task)
 				ArrayList<Worker> selectionGroup1 = red0.reduceGroupTask(taskID, selectionGroup0);
-				//System.out.println("size g1: " + selectionGroup1.size());
 
 				// remove workers from selection group who have no time
 				ArrayList<Worker> selectionGroup2 = red0.reduceGroupDate(e, selectionGroup1);
-				//System.out.println("size g2: " + selectionGroup2.size());
 
 				// remove workers who don't want to work with somebody who is already on the list
 				ArrayList<Worker> selectionGroup3 = red0.reduceGroupWorksWithout(eDate, workerList, selectionGroup2, coolDownTime);
-				//System.out.println("size g3: " + selectionGroup3.size());
 
 				// remove workers who are already on the list with the same task
 				ArrayList<Worker> selectionGroup4 = red0.reduceAlreadyDidSameTask(workerList, taskID, jobList, selectionGroup3);
-				//System.out.println("size g4: " + selectionGroup4.size());
 
 				// if somebody is already doing a job, give him another one if it is different
 				worker = pSelect.alreadyActiveWorker(workerList, taskID, jobList, selectionGroup4);
 				if(worker != -1){
 					// write information
 					workerList = addWorker2workerList(worker, taskID, workerList, jobList);
-					//System.out.println("alreadyActive" + Arrays.toString(workerList));
 					continue;
 				}
 
 				// remove workers who have worked in the coolDownPhase
 				ArrayList<Worker> selectionGroup5 = red0.reduceGroupCoolDown(eDate, coolDownTime, selectionGroup4);
-				//System.out.println("size g5: " + selectionGroup5.size());
 
 				if(selectionGroup5.size() == 0){
 					// nobody left
@@ -145,7 +131,6 @@ public class Run {
 				if(worker != -1){
 					// write information
 					workerList = addWorker2workerList(worker, taskID, workerList, jobList);
-					//System.out.println("datePref" + Arrays.toString(workerList));
 					continue;
 				}
 
@@ -155,9 +140,9 @@ public class Run {
 				rSelect.eventRanking(impactOfPrefEvent);
 				rSelect.lastActiveRaking();
 				rSelect.nextPreferedDateRanking(coolDownTime, 1000);
+				// shuffle == true -> if two or more workers have the same rank, one is selected randomly; otherwise first
 				worker = rSelect.bestWorker(shuffle);
 
-				//System.out.println("ranked0: " + Arrays.toString(workerList));
 				workerList = addWorker2workerList(worker, taskID, workerList, jobList);
 
 			}// end task
@@ -168,7 +153,7 @@ public class Run {
 			 * -> output
 			 *  -> update workers
 			 */
-
+			// each output array represents a line of the output file
 			for(Worker w:allWorkers){
 				for(int i = 0; i < workerList.length; i++){
 					if(workerList[i] == w.getId()){
@@ -224,9 +209,4 @@ public class Run {
 		return workerList;
 	}
 
-	public static long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
-		// date1 is before date2
-		long diffInMillies = date2.getTime() - date1.getTime();
-		return timeUnit.convert(diffInMillies, TimeUnit.MILLISECONDS);
-	}
 }

@@ -21,6 +21,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The excel reader is used to read all input information from the input file.
+ */
 public class ExcelReader {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExcelReader.class);
@@ -35,10 +38,10 @@ public class ExcelReader {
 	private Sheet sheet_workers;
 	private Sheet sheet_settings;
 
-	DateFormat format;
-	DateFormat justDateformat = new SimpleDateFormat("dd.MM.yyyy");
+    private TimeZone gmtZone = TimeZone.getTimeZone("CEST");
+    private DateFormat justDateformat = new SimpleDateFormat("dd.MM.yyyy");
 
-	private int biggestCounter;
+    private int biggestCounter = 0;
 	
 	private Date rangeStart = null;
 	private Date rangeEnd = null;
@@ -68,14 +71,14 @@ public class ExcelReader {
 		sheet_workers = workbook.getSheet("Workers");
 		sheet_settings = workbook.getSheet("Settings");
 
-		TimeZone gmtZone = TimeZone.getTimeZone("CEST");
-		format = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-		format.setTimeZone(gmtZone);
-		justDateformat.setTimeZone(gmtZone);
-
-		biggestCounter = 0;
+        justDateformat.setTimeZone(gmtZone);
 	}
 
+    /**
+     * Method to determine the type of the input file
+     * @param path
+     * @return
+     */
 	private boolean isXLSX(String path){
 
 		String [] splitPath = path.split("\\.");
@@ -93,6 +96,11 @@ public class ExcelReader {
 		return false;
 	}
 
+    /**
+     * This method reads all tasks from the tasks sheet of the input file and returns them as an ArrayList.
+     * The tasks are read until the first line without an ID
+     * @return
+     */
 	public ArrayList<Task> readTasks() {
 		// puts all tasks into an ArrayList
 		ArrayList<Task> allTasks = new ArrayList<Task>();
@@ -148,9 +156,11 @@ public class ExcelReader {
 		return allTasks;
 	}
 
-
-
-
+    /**
+     * Method to read all event related data. The method call several subroutines for the different types of event
+     * related data. The combined data is returned as ArrayList
+     * @return
+     */
 	public ArrayList<Event> readEvents() {
 		// puts all Events into an ArrayList
 
@@ -179,8 +189,11 @@ public class ExcelReader {
 		return allEvents;
 	}
 
-
-
+    /**
+     * Method to read the exclusion data. The exclusion data is used to cancel regular events. If a potential event is
+     * in the exclusion data either as date or event, it will not be created.
+     * @return
+     */
 	private DatesCollection readExclusionData(){
 
 		DatesCollection excludedDates = new DatesCollection();
@@ -223,6 +236,10 @@ public class ExcelReader {
 		return excludedDates;
 	}
 
+    /**
+     * Reads the date range for all events. The date range is used for the creation of the regular events. Special events
+     * outside of the date range are not considered.
+     */
 	private void readDateRange() {
 
 		Row startRow = sheet_period.getRow(2);
@@ -245,7 +262,11 @@ public class ExcelReader {
 		// get the range
 	}
 
-
+    /**
+     * Reads the input for the regular events. Regular events are repeated weekly
+     * @param excludedDates
+     * @return
+     */
 	private ArrayList<Event> readRegularEvents(DatesCollection excludedDates) {
 
 		ArrayList<Event> regularEvents = new ArrayList<>();
@@ -305,7 +326,6 @@ public class ExcelReader {
 			}
 
 			do {
-				//System.out.println("loop0: " + runner);
 				// exclusion date or specific event exclusion?
 				if (excludedDates.containsDate(runner) || excludedDates.containsEvent(runner, regEventID)) {
 					c.add(Calendar.DATE, 7);
@@ -313,7 +333,6 @@ public class ExcelReader {
 					continue;
 				}
 
-				// System.out.println("runner: " + runner);
 				// create event and add to allEvents
 				Event event0 = new Event();
 				event0.setName(eventRow.getCell(1).getStringCellValue()); //sheet_regEvents.getCell(4 + i, 9).getContents());
@@ -327,34 +346,17 @@ public class ExcelReader {
 				t.setTimeZone(tz);
 				t.setTime(time);
 
-				// System.out.println("time: " + time );
-
 				Calendar cFinal = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
 				cFinal.setTimeZone(tz);
 				cFinal.setTime(runner);
-				//System.out.println("cf, runner set: " + cFinal.getTime());
-				//cFinal.set(Calendar.HOUR_OF_DAY, t.get(11));
-				//cFinal.set(Calendar.MINUTE, t.get(12));
-				//System.out.println(cFinal.get(Calendar.HOUR_OF_DAY));
-				//System.out.println(t.get(Calendar.HOUR_OF_DAY));
 				cFinal.set(Calendar.HOUR_OF_DAY, t.get(Calendar.HOUR_OF_DAY));
-				//System.out.println("cf, hour set: " + cFinal.getTime());
 				cFinal.set(Calendar.MINUTE, t.get(Calendar.MINUTE));
-				//System.out.println("cf, time set: " + cFinal.getTime());
 				Date theDate = cFinal.getTime();
-				//System.out.println(format.format(theDate));
 				event0.setDate(theDate);
 
+				// set regular event comment
 				Cell regEventCommentCell = eventRow.getCell(6, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-				String regEventComment = " ";
-				if(regEventCommentCell != null){
-					try{
-						regEventComment = regEventCommentCell.getStringCellValue();
-					} catch (Exception e){
-						// do nothing, comment stays empty
-					}
-				}
-				event0.setComment(regEventComment);
+                event0.setComment(readCellOfComment(regEventCommentCell));
 
 				// extract tasks for event
 				Cell cellOfRegEventTasks = eventRow.getCell(4);
@@ -387,7 +389,7 @@ public class ExcelReader {
 
 				regularEvents.add(event0);
 
-				// add seven days
+				// add seven days to get the next date of the regular event
 				c.add(Calendar.DATE, 7);
 				runner = c.getTime();
 
@@ -401,9 +403,10 @@ public class ExcelReader {
 		return regularEvents;
 	}
 
-
-
-
+    /**
+     * Reads the input for special events. Special events occur only one.
+     * @return
+     */
 	private ArrayList<Event>  readSpecialEvents() {
 
 		ArrayList<Event> specialEvents = new ArrayList<>();
@@ -456,24 +459,18 @@ public class ExcelReader {
 			// is
 			// deletable
 			t2.setTime(time2);
-			// System.out.println("time2: " + time2 );
-
-			// System.out.println("date2: " + date2);
 			cFinal2.setTime(date);
 			cFinal2.add(Calendar.HOUR, 3); // simple fix for java calendar bug. See: https://stackoverflow.com/questions/25239362/why-gregoriancalendar-changes-day-when-setting-hour-of-day-to-0-in-utc
-
 			cFinal2.set(Calendar.HOUR_OF_DAY, t2.get(11));
 			cFinal2.set(Calendar.MINUTE, t2.get(12));
 			cFinal2.set(Calendar.SECOND, t2.get(13));
-
-			// System.out.println("t2: " +t2.getTime() + " " + t2.get(12));
-			// System.out.println("cf2: " + cFinal2.getTime());
 			Date theDate2 = cFinal2.getTime();
-			// System.out.println(format.format(theDate2));
-
 			event1.setDate(theDate2);
 
-			event1.setComment(eventRow.getCell(6).getStringCellValue());
+			// set special event comment
+            Cell specEventCommentCell = eventRow.getCell(6, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+            event1.setComment(readCellOfComment(specEventCommentCell));
+
 			// extract tasks for event
 			Cell cellOfTasks = eventRow.getCell(4);
 			ArrayList<Integer> eventTasks = null;
@@ -520,7 +517,7 @@ public class ExcelReader {
 	 * @param specialEvents
 	 * @return
 	 */
-	ArrayList<Event> mergeEvents(ArrayList<Event> regularEvents, ArrayList<Event> specialEvents){
+	private ArrayList<Event> mergeEvents(ArrayList<Event> regularEvents, ArrayList<Event> specialEvents){
 
 		HashMap<String, Event> eventsMap = new HashMap<>();
 
@@ -595,6 +592,33 @@ public class ExcelReader {
 		return id;
 	}
 
+    /**
+     * Method to read the comment cells. Returns an empty string for empty cells
+     * This methods avoids errors which could occur if the program tried to read an empty cell
+     * @param commentCell
+     * @return
+     */
+	private String readCellOfComment(Cell commentCell){
+
+        String comment = " ";
+
+        if(commentCell != null){
+            try{
+                comment = commentCell.getStringCellValue();
+            } catch (Exception e){
+                // do nothing, comment stays empty
+            }
+        }
+        return comment;
+    }
+
+    /**
+     * Method to read cells which can contain more than one date. All dates are returned as one datesCollection
+     * @param cell
+     * @param location
+     * @return
+     * @throws ParseException
+     */
 	private DatesCollection readCellOfDates(Cell cell, String location)  throws ParseException{
 
 		if(cell == null){
@@ -720,7 +744,13 @@ public class ExcelReader {
 		return justDateformat.parse(dateString);
 	}
 
-
+    /**
+     * Tests whether the given date is in the date range and warns the user. The warning is useful to identify typos in
+     * dates which are nonetheless correct dates (e.g. wrong year)
+     * @param date
+     * @param location
+     * @return
+     */
 	private boolean isDateInRange(Date date, String location){
 
 		if (rangeStart != null && rangeEnd != null && (date.before(rangeStart) || date.after(rangeEnd))){
@@ -730,6 +760,12 @@ public class ExcelReader {
 		return true;
 	}
 
+    /**
+     * Method to read a cell of several integer values. The values are returned as ArrayList
+     * @param cell
+     * @return
+     * @throws ParseException
+     */
 	private ArrayList<Integer> readCellOfIntegers(Cell cell) throws ParseException {
 
 		ArrayList<Integer> intsOfCell = new ArrayList<>();
@@ -796,11 +832,11 @@ public class ExcelReader {
 		return intsOfCell;
 	}
 
-
-
-
-
-
+    /**
+     * Method to read all workers. The data is saved in worker objects and returned in an ArrayList
+     * @param biggestCounter
+     * @return
+     */
 	public ArrayList<Worker> readWorkers(int biggestCounter) {
 		// read the information for the workers and put them into the arrayList
 		ArrayList<Worker> allWorkers = new ArrayList<Worker>();
@@ -944,15 +980,17 @@ public class ExcelReader {
 		LOGGER.info("All workers are read in. The last worker is from line " + rowNum);
 		return allWorkers;
 	}
-	
+
+    /**
+     * Reads the cool down time of the settings sheet. The cool down time is the minimum time length in days of inactivity
+     * after the last assignment.
+     * @return
+     */
 	public int readCoolDown() {
 		return (int) sheet_settings.getRow(1).getCell(1).getNumericCellValue();
 	}
-	
+
 	public int getBiggestCounter(){
 		return biggestCounter;
 	}
-	
-
-	
 }
