@@ -316,7 +316,9 @@ public class ExcelReader {
 				currentWeekday = format2.format(runner);
 				catchStuckinLoopCounter++;
 				if(catchStuckinLoopCounter > 8){
-					System.err.println("ExcelReader, ReadEvents: Stuck in while-loop. Language difference between system and input file?");
+                    LOGGER.error("'" + weekday + "' from line " + String.valueOf(rowNum + 1) + " of the regular events could not be identified as week day. ");
+                    LOGGER.warn("The week days have to be written in the system language without any typos.");
+                    System.exit(1);
 				}
 			}
 
