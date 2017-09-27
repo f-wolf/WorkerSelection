@@ -28,7 +28,6 @@ public class ExcelReader {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExcelReader.class);
 
-	String path;
 	Workbook workbook;
 
 	private Sheet sheet_tasks;
@@ -38,7 +37,7 @@ public class ExcelReader {
 	private Sheet sheet_workers;
 	private Sheet sheet_settings;
 
-    private TimeZone gmtZone = TimeZone.getTimeZone("CEST");
+    private TimeZone timeZone = Settings.getTimeZone();
     private DateFormat justDateformat = new SimpleDateFormat("dd.MM.yyyy");
 
     private int biggestCounter = 0;
@@ -47,7 +46,6 @@ public class ExcelReader {
 	private Date rangeEnd = null;
 
 	public ExcelReader(String path) {
-		this.path = path;
 
 		try {
 
@@ -71,7 +69,7 @@ public class ExcelReader {
 		sheet_workers = workbook.getSheet("Workers");
 		sheet_settings = workbook.getSheet("Settings");
 
-        justDateformat.setTimeZone(gmtZone);
+        justDateformat.setTimeZone(timeZone);
 	}
 
     /**
@@ -342,14 +340,13 @@ public class ExcelReader {
 
 				// get date and time
 				// get start time in hours and minutes
-				TimeZone tz = TimeZone.getTimeZone("CEST");
 				Date time = eventRow.getCell(3).getDateCellValue(); //((DateCell) sheet_regEvents.getCell(4 + i, 12)).getDate();
-				Calendar t = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
-				t.setTimeZone(tz);
+				Calendar t = Calendar.getInstance(timeZone);
+				t.setTimeZone(timeZone);
 				t.setTime(time);
 
-				Calendar cFinal = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
-				cFinal.setTimeZone(tz);
+				Calendar cFinal = Calendar.getInstance(timeZone);
+				cFinal.setTimeZone(timeZone);
 				cFinal.setTime(runner);
 				cFinal.set(Calendar.HOUR_OF_DAY, t.get(Calendar.HOUR_OF_DAY));
 				cFinal.set(Calendar.MINUTE, t.get(Calendar.MINUTE));
@@ -446,7 +443,7 @@ public class ExcelReader {
 			event1.setName(eventName);
 
 			// get date and time
-			Calendar cFinal2 = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
+			Calendar cFinal2 = Calendar.getInstance(timeZone);
 
             String locationInfo = "special event " + eventName + " in line " + String.valueOf(rowNum + 1);
             Cell specEventDateCell = eventRow.getCell(2);
@@ -467,7 +464,7 @@ public class ExcelReader {
 
 			// get start time in hours and minutes
 			Date time2 = eventRow.getCell(3).getDateCellValue();
-			Calendar t2 = Calendar.getInstance(TimeZone.getTimeZone("GMT")); // Timezone
+			Calendar t2 = Calendar.getInstance(timeZone); // Timezone
 			// ...
 			// is
 			// deletable

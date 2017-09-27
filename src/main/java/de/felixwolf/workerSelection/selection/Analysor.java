@@ -97,8 +97,8 @@ public class Analysor {
 
 		// write time
 		DateFormat timeFormat = new SimpleDateFormat("HH:mm");
-		TimeZone gmtZone = TimeZone.getTimeZone("GMT");
-		timeFormat.setTimeZone(gmtZone);
+		TimeZone timeZone = Settings.getTimeZone();
+		timeFormat.setTimeZone(timeZone);
 		output[3] = timeFormat.format(eDate);
 		output[4] = "";
 		
