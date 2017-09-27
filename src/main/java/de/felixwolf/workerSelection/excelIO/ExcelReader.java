@@ -445,9 +445,19 @@ public class ExcelReader {
 
 			// get date and time
 			Calendar cFinal2 = Calendar.getInstance(TimeZone.getTimeZone("CEST"));
-			Date date = eventRow.getCell(2).getDateCellValue();
 
-			String locationInfo = "special event " + eventName + " in line " + String.valueOf(rowNum + 1);
+            String locationInfo = "special event " + eventName + " in line " + String.valueOf(rowNum + 1);
+            Cell specEventDateCell = eventRow.getCell(2);
+            Date date = null;
+
+            try{
+                date = readCellOfSingleDate(specEventDateCell, locationInfo);
+            } catch (ParseException e){
+                LOGGER.error("The special event date in line " + String.valueOf(rowNum + 1) + " could not be parsed. Please correct the input");
+                e.printStackTrace();
+                System.exit(65);
+            }
+
 			if(!isDateInRange(date, locationInfo)){
 				rowNum++;
 				continue;
@@ -725,6 +735,43 @@ public class ExcelReader {
 		return datesOfCell;
 	}
 
+    /**
+     * Method to read a cell with a single date. Theoretically, this method should not be necessary. A date cell should
+     * be formatted as such. However, this is not always the case and this methods returns dates which are unreadable for
+     * the "cell.getDateCellValue()" method.
+     * @param cell
+     * @param location
+     * @return
+     * @throws ParseException
+     */
+	private Date readCellOfSingleDate(Cell cell, String location) throws ParseException {
+
+	    Date date = null;
+
+	    if(cell == null){
+	        throw new ParseException("The date cell is empty", 0);
+        }
+
+        if(cell.getCellTypeEnum().equals(CellType.NUMERIC)){
+	        try {
+	            date = cell.getDateCellValue();
+            } catch (Exception e){
+	            throw new ParseException("The date could not be read", 0);
+            }
+        } else {
+            // the date might be saved as String - Excel works in mysterious ways
+            String dateString;
+            try {
+                dateString = cell.getStringCellValue();
+            } catch (Exception e){
+                throw new ParseException("The date input could not be read as string value", 0);
+            }
+            date = parseSingleDateString(dateString, location);
+        }
+        return date;
+    }
+
+
 	/** Method to parse a single date given as String.
 	 *
 	 * Dateformat.parse ignores all characters after the date is parsed. This can lead to undesired effects if the user
@@ -871,7 +918,6 @@ public class ExcelReader {
 			worker1.setId(workerID);
 			String workerName = workerRow.getCell(1).getStringCellValue();
 			worker1.setName(workerName);
-			//System.out.println("worker: " + worker1.getName());
 
 			// extract tasks for worker
 			Cell tasksCell = workerRow.getCell(2);
@@ -962,7 +1008,6 @@ public class ExcelReader {
 			if(counterCell != null){
 				counter[0] = (int) counterCell.getNumericCellValue();
 				worker1.setCounter(counter);
-				//System.out.println("*** " + Integer.parseInt(counterString));
 			}
 
 			else{
