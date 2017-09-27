@@ -449,6 +449,7 @@ public class ExcelReader {
 
 			String locationInfo = "special event " + eventName + " in line " + String.valueOf(rowNum + 1);
 			if(!isDateInRange(date, locationInfo)){
+				rowNum++;
 				continue;
 			}
 
