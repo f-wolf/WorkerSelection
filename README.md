@@ -24,7 +24,8 @@ input and explained in a later section.
 
 The program can be built with the command 
 *mvn clean compile assembly:single* or run from an IDE. It has been 
-tested on Ubuntu 16.04 and Windows 7.
+tested on Ubuntu 16.04 and Windows 7. For a first test, simply 
+rename the example input file to "input.xlsx".
 
 ## How it works ##
 At first, WorkerSelection collects all data from the input file. The 
@@ -138,7 +139,11 @@ makes sure that workers who were active at the end of the last period
 are not directly selected at the start of the new period.
 
 ### Settings ###
-The settings sheet allows some fine-tuning. 
+The settings sheet allows some fine-tuning. All possible settings 
+can be found on the settings sheet of the example input. 
+The order of the settings does not matter, but the key
+words must not be changed. WorkerSelection scans the first 100 
+lines, therefore empty lines can be used to structure the settings.
 
 
 ### "Date strings" ###

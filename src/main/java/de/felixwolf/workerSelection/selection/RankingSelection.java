@@ -10,6 +10,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The ranking selection class is used to select a worker from the pool of workers who are suitable for the job.
+ *
+ * The ranking is used to balance the different factors which are taken into account for the selection. The different
+ * factors include: number of activities, the time difference to the last activity, whether the event is preferred and
+ * the time difference to the next preferred date.
+ *
+ * The ranking is stored as integer value for all workers. Adding a positive value to the ranking makes the selection
+ * more unlikely, because the worker with the lowest ranking number is selected.
+ */
 
 public class RankingSelection {
 
@@ -27,13 +37,12 @@ public class RankingSelection {
 		for(Worker w:workers){
 			ranking.put(w.getId(), 0);
 		}
-		//System.out.println("size of final selectionGroup: " + workers.size());
-		//System.out.println(" ");
 	}
-	
-	
+
+	/**
+	 * 	Adds the number of active day to the score
+	 */
 	public void counterRanking(){
-		// adds the number of active day to the score
 		for(Worker w:workers){
 			int wID = w.getId();
 			
@@ -48,10 +57,14 @@ public class RankingSelection {
 			ranking.put(wID, ranking.get(wID) + additionalScore);
 		}
 	}
-	
-	public void eventRanking(int impactOfPrefEvent){
-		// reduces the score by the impact value if the event is prefered
-		// therefore the worker is more likely to get picked
+
+	/**
+	 * Reduces the score by the impact value if the event is preferred.
+	 * Therefore, the worker is more likely to get selected.
+	 */
+	public void eventRanking(){
+		int impactOfPrefEvent = Settings.getImpactOfPrefEvent();
+
 		for(Worker w:workers){
 			int wID = w.getId();
 			
@@ -61,12 +74,12 @@ public class RankingSelection {
 			}
 		}
 	}
-	
+
+	/*
+	 * Calculates the natural logarithm of the cubed difference
+	 * This value is subtracted from the score and makes the selection more likely
+	 */
 	public void lastActiveRaking(){
-		/*
-		 * Calculates the natural logarithm of the cubed difference
-		 * This value is subtracted from the score and makes the selection more likely
-		 */
 		Date eDate = e.getDate();
 		
 		for(Worker w:workers){
@@ -86,15 +99,12 @@ public class RankingSelection {
 			
 			ranking.put(wID, ranking.get(wID) - scoreDiff);
 		}
-		
-		
 	}
-	
+
+	/*
+     * make the selection more unlikely if the worker is close to an upcoming preferred event
+     */
 	public void nextPreferedDateRanking(int preFreeze, int freezeForce){
-		/*
-		 * make the selection more unlikely if the worker is close to an upcoming preferred event
-		 */
-		
 		Date eDate = e.getDate();
 
 		for(Worker w:workers){
@@ -134,8 +144,14 @@ public class RankingSelection {
 			}
 		}
 	}
-	
-	public int bestWorker(boolean shuffle){
+
+	/**
+	 * Returns the id of the best worker
+	 * @return
+	 */
+	public int bestWorker(){
+
+		boolean shuffle = Settings.getShuffle();
 		
 		// find lowest score
 		int lowestScore = 999999;
@@ -160,7 +176,6 @@ public class RankingSelection {
 		}
 		return workersWithLowestScore.get(0);
 	}
-	
 	
 	private long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
 		// date1 is before date2

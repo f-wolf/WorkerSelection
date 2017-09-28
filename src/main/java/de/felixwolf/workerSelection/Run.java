@@ -18,8 +18,6 @@ public class Run {
 
 	static String inputPath = "input.xlsx";
 	static int columnsWithText = 4;
-	static int impactOfPrefEvent = 3;
-	static boolean shuffle = true;
 
 	static ArrayList<Task> allTasks = new ArrayList<Task>();
 	static ArrayList<Event> allEvents = new ArrayList<Event>();
@@ -138,11 +136,11 @@ public class Run {
 				// find next worker with ranking
 				RankingSelection rSelect = new RankingSelection(e, selectionGroup5);
 				rSelect.counterRanking();
-				rSelect.eventRanking(impactOfPrefEvent);
+				rSelect.eventRanking();
 				rSelect.lastActiveRaking();
 				rSelect.nextPreferedDateRanking(coolDownTime, 1000);
 				// shuffle == true -> if two or more workers have the same rank, one is selected randomly; otherwise first
-				worker = rSelect.bestWorker(shuffle);
+				worker = rSelect.bestWorker();
 
 				workerList = addWorker2workerList(worker, taskID, workerList, jobList);
 

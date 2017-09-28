@@ -23,8 +23,20 @@ public class Settings {
     private static Sheet sheet_settings;
     private static Workbook workbook;
 
+    private static final int nrows = 100; // number of rows which are read
+
     private static TimeZone timeZone = TimeZone.getTimeZone("Europe/Berlin");
+
+    // the legend for the output file
+    private static String legendDay = "Day";
+    private static String legendDate = "Date";
+    private static String legendTime = "Time";
+    private static String legendComment = " ";
+
+    // settings which influence the ranking
     private static int coolDownTime = 8;
+    private static boolean shuffle = true;
+    private static int impactOfPrefEvent = 3;
 
     /**
      * initializes all settings of the settings sheet
@@ -48,8 +60,6 @@ public class Settings {
      * Initializes all settings it can find in the first n rows
      */
     private static void initSettings(){
-
-        int nrows = 100; // opt Todo: read this number from the settings sheet
 
         for(int rownNum = 1; rownNum <= nrows; rownNum++){
 
@@ -82,6 +92,13 @@ public class Settings {
         switch (key){
             case "cooldowntime": readCoolDownTime(valueCell); break;
             case "timezone": readTimeZone(valueCell); break;
+            case "legendday": readLegendDay(valueCell); break;
+            case "legenddate": readLegendDate(valueCell); break;
+            case "legendtime": readLegendTime(valueCell); break;
+            case "legendcomment": readLegendComment(valueCell); break;
+
+            case "shuffle": readShuffle(valueCell); break;
+            case "impactofpreferredevent": readImpactOfPrefEvent(valueCell); break;
 
             default: LOGGER.warn("Unknown setting key detected: " + key + ". It is not read in.");
         }
@@ -119,6 +136,85 @@ public class Settings {
             coolDownTime = (int) valueCell.getNumericCellValue();
         } catch (Exception e){
             LOGGER.warn("The cool down time could not be read from the settings. Using default of 8");
+        }
+    }
+
+    /**
+     * The following methods are used to read the values for the legend. The legend is found in the first four cells
+     * of the first line of the output file. The values describe the content of the columns. Reading the values from
+     * the settings file allows the user to have the output file directly in the desired language.
+     */
+
+    private static void readLegendDay(Cell valueCell){
+
+        try {
+            legendDay = valueCell.getStringCellValue();
+        } catch (Exception e){
+            LOGGER.warn("The legendDay value could not be read. Default is used");
+        }
+    }
+
+    private static void readLegendDate(Cell valueCell){
+
+        try {
+            legendDate = valueCell.getStringCellValue();
+        } catch (Exception e){
+            LOGGER.warn("The legendDate value could not be read. Default is used");
+        }
+    }
+
+    private static void readLegendTime(Cell valueCell){
+
+        try {
+            legendTime = valueCell.getStringCellValue();
+        } catch (Exception e){
+            LOGGER.warn("The legendTime value could not be read. Default is used");
+        }
+    }
+
+    private static void readLegendComment(Cell valueCell){
+
+        try {
+            legendComment = valueCell.getStringCellValue();
+        } catch (Exception e){
+            LOGGER.warn("The legendComment value could not be read. Default is used");
+        }
+    }
+
+    /**
+     * Reads the shuffle value. "shuffle" determines how the workers are selected if more than one worker has the best
+     * ranking. "shuffle" == true -> random selection; "shuffle" == false -> the first is selected
+     * @param valueCell
+     */
+    private static void readShuffle(Cell valueCell){
+
+        String valueString;
+        try {
+            valueString = valueCell.getStringCellValue();
+        } catch (Exception e){
+            LOGGER.warn("The shuffle value could not be read. Default 'true' is used.");
+            return;
+        }
+
+        valueString = valueString.trim().toLowerCase();
+
+        if(valueString.equals("true")){
+            shuffle = true;
+        }
+        else if(valueString.equals("false")){
+            shuffle = false;
+        }
+    }
+
+    /**
+     * Reads the impact value of preferred events
+     * @param valueCell
+     */
+    private static void readImpactOfPrefEvent(Cell valueCell){
+        try {
+            impactOfPrefEvent = (int) valueCell.getNumericCellValue();
+        } catch (Exception e){
+            LOGGER.warn("The 'impact of preferred event' could not be read from the settings. Using default of 3");
         }
     }
 
@@ -197,5 +293,29 @@ public class Settings {
 
     public static TimeZone getTimeZone() {
         return timeZone;
+    }
+
+    public static String getLegendDay() {
+        return legendDay;
+    }
+
+    public static String getLegendDate() {
+        return legendDate;
+    }
+
+    public static String getLegendTime() {
+        return legendTime;
+    }
+
+    public static String getLegendComment(){
+        return legendComment;
+    }
+
+    public static boolean getShuffle() {
+        return shuffle;
+    }
+
+    public static int getImpactOfPrefEvent() {
+        return impactOfPrefEvent;
     }
 }

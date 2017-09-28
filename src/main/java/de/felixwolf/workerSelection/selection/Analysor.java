@@ -56,19 +56,16 @@ public class Analysor {
 			}
 			// System.out.println(id + ": " + maxCount);
 		}
-		
 		return jobList;
-		
 	}
 	
 	public String [] createLegend(ArrayList<Integer> jobList, ArrayList<Task> allTasks, int columnsWithText){
 		
 		String[] legend = new String[jobList.size()];
-		legend[0] = "Tag";
-		legend[1] = "Datum";
-		legend[2] = " ";
-		legend[3] = "Uhrzeit";
-		legend[4] = " ";
+		legend[0] = Settings.getLegendDay();
+		legend[1] = Settings.getLegendDate();
+		legend[2] = Settings.getLegendComment();
+		legend[3] = Settings.getLegendTime();
 		for (int i = columnsWithText; i < jobList.size(); i++) {
 			for (Task t : allTasks) {
 				if (jobList.get(i) == t.getId()) {
@@ -104,6 +101,4 @@ public class Analysor {
 		
 		return output;
 	}
-	
-	
 }
