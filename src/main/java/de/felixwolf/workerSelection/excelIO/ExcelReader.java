@@ -531,7 +531,7 @@ public class ExcelReader {
 
 		HashMap<String, Event> eventsMap = new HashMap<>();
 
-		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmm");
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
 		// first place the regular events in the Hashmap
 		for(Event regEvent:regularEvents){
