@@ -1026,15 +1026,6 @@ public class ExcelReader {
 		return allWorkers;
 	}
 
-    /**
-     * Reads the cool down time of the settings sheet. The cool down time is the minimum time length in days of inactivity
-     * after the last assignment.
-     * @return
-     */
-	public int readCoolDown() {
-		return (int) sheet_settings.getRow(1).getCell(1).getNumericCellValue();
-	}
-
 	public int getBiggestCounter(){
 		return biggestCounter;
 	}

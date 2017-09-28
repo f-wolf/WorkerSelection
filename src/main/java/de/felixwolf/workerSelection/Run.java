@@ -30,6 +30,7 @@ public class Run {
 
 	public static void main(String[] args) {
 
+		Settings.init(inputPath);
 		readInputFile();
 		processData();
 		writeOutputFile();
@@ -41,7 +42,7 @@ public class Run {
 		allEvents = excelReader.readEvents();
 		int biggestCounter = excelReader.getBiggestCounter(); // has to be after readEvents
 		allWorkers = excelReader.readWorkers(biggestCounter);
-		coolDownTime = excelReader.readCoolDown();
+		coolDownTime = Settings.getCoolDownTime();
 		LOGGER.info("The excel file is read. Please make sure that all data was read in completely");
 	}
 
