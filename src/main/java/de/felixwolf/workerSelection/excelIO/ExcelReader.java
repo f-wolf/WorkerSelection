@@ -685,7 +685,7 @@ public class ExcelReader {
 
 						Calendar cal = Calendar.getInstance();
 						cal.setTime(tempDate);
-						cal.add(Calendar.DATE, 1); // minus number would
+						cal.add(Calendar.DATE, 1);
 						tempDate = cal.getTime();
 					}
 					datesOfCell.addDate(end);
@@ -1014,7 +1014,14 @@ public class ExcelReader {
 			}
 
 			// read last date
-			Date lastDate = workerRow.getCell(10).getDateCellValue();
+			Date lastDate;
+			try {
+				lastDate = workerRow.getCell(10).getDateCellValue();
+			}
+			catch (Exception e){
+				lastDate = null;
+				LOGGER.warn("The last active date for " + workerName + " could not be read. No 'last active date' is set.");
+			}
 			worker1.setLastDate(lastDate);
 
 			allWorkers.add(worker1);
