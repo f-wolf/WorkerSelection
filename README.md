@@ -32,7 +32,7 @@ At first, WorkerSelection collects all data from the input file. The
 program will terminate if it fails to read potential crucial data to
 avoid creating a plan based on incorrect data. Afterwards, for every
 task of every event a pool of workers in created. The pool of workers 
-is reduced to only the workers which can to the task. Then, a ranking 
+is reduced to only the workers which can do the task. Then, a ranking 
 process is used to determine the most suitable worker. In the last 
 step, the result is written to a new excel file.    
 
@@ -44,10 +44,10 @@ like to have a small speech / presentation to learn something new and
 after the training they have some snacks. Additionally, they have 
 parties for special occasions. 
 
-The purpose of WorkerSelection is to distribute the tasks evenly 
-among the members who volunteer to do them while respecting all given
-constraints. The constraints include the different tasks preferences 
-and time restrictions.
+The purpose of WorkerSelection is to distribute the tasks as evenly 
+as possible among the members who volunteer to do them while 
+respecting all given constraints. The constraints include the 
+different tasks preferences and time restrictions.
 
 ## The structure of the input file ##
 
@@ -119,21 +119,21 @@ possible with the use of a minus sign / dash (Example input: 2; 3;
 6-8 means events 2, 3, 6, 7, 8).
 * Excluded events: the IDs of the events which the worker is not 
 willing to do. The input format is the same as for preferred events.
-* Preferred dates: Specific dates on which the worker would like to 
+* Preferred dates: specific dates on which the worker would like to 
 do a task. The input is in the form of "date strings" which is 
 described in one of the following sections.
-* Excluded dates: Specific dates for which the worker will not be 
+* Excluded dates: specific dates for which the worker will not be 
 selected. The input is in the form of "date strings" which is 
 described in one of the following sections.
-* Works with: Takes as input the ID of one other worker. Strongly 
+* Works with: takes as input the ID of one other worker. Strongly 
 increases the chances of getting selected if the other worker is 
 already assigned to a task.
-* Works without: Takes as input the ID of one other worker. The 
+* Works without: takes as input the ID of one other worker. The 
 worker will not be selected if the other one is already assigned to
 a task.
-* WorkCount last period: The number of assignments of the last period.
+* WorkCount last period: the number of assignments of the last period.
 This count can be found in the previous output file.
-* Last active: Date of last activity from the last period. The 
+* Last active: date of last activity from the last period. The 
 spreadsheet should recognize the input as date. This information 
 makes sure that workers who were active at the end of the last period
 are not directly selected at the start of the new period.
@@ -155,7 +155,7 @@ separated by semicolons:
 * Single events: single events allow to specify an exact event at a 
 specific date. They are formatted as "dd.mm.yyyy|eventID". For 
 example "23.08.2017|4" which means an event with ID 4 on August 23rd 2017.
-* Date ranges: They are formatted as "dd.mm.yyyy - dd.mm.yyyy". Start 
+* Date ranges: they are formatted as "dd.mm.yyyy - dd.mm.yyyy". Start 
 and end date will be included.
 
 
