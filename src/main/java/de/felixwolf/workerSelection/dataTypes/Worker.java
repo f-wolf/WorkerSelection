@@ -17,7 +17,7 @@ public class Worker {
 	private DatesCollection excludedDates = new DatesCollection();
 	private DatesCollection preferedDates = new DatesCollection();
 	private int worksWith = 0;
-	private int worksWithout = 0;
+	private ArrayList<Integer> worksWithout = new ArrayList<Integer>();
 	private int [] counter;
 	private HashMap<Date, Integer> allActivities = new HashMap<Date, Integer>();
 	private Date lastDate = null;
@@ -113,11 +113,11 @@ public class Worker {
 		this.worksWith = worksWith;
 	}
 
-	public int getWorksWithout() {
+	public ArrayList<Integer> getWorksWithout() {
 		return worksWithout;
 	}
 
-	public void setWorksWithout(int worksWithout) {
+	public void setWorksWithout(ArrayList<Integer> worksWithout) {
 		this.worksWithout = worksWithout;
 	}
 

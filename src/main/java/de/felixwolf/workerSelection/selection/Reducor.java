@@ -84,13 +84,13 @@ public class Reducor {
 		// create kickList
 		ArrayList<Integer> kickList = new ArrayList<Integer>();
 		for (Worker w : selectionGroup) {
-			if (w.getWorksWithout() > 0) {
+			if (w.getWorksWithout().size() > 0) {
 				//System.out.println("potential blocking: " + w.getId() + " does not work with: " + w.getWorksWithout());
 				// System.out.println("block " + w.getWorksWithout());
 				// System.out.println(Arrays.toString(workerList));
 				for (int w2 : workerList) {
 					// System.out.println(w2);
-					if (w2 == w.getWorksWithout()) {
+					if (w.getWorksWithout().contains(w2)) {
 						// w2 is already working, so w is kicked out
 						//System.out.println("kick: " + w.getId());
 						kickList.add(selectionGroup.indexOf(w));

@@ -994,7 +994,13 @@ public class ExcelReader {
 
 			Cell worksWithoutCell = workerRow.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 			if(worksWithoutCell != null){
-				worker1.setWorksWithout((int) worksWithoutCell.getNumericCellValue());
+				try {
+					worker1.setWorksWithout(readCellOfIntegers(worksWithoutCell));
+				} catch (ParseException e) {
+					LOGGER.error("Workswithout for " + workerName + "could not be read.");
+					e.printStackTrace();
+					System.exit(65);
+				}
 			}
 
 			// create counter

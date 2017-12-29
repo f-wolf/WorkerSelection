@@ -159,10 +159,15 @@ public class Run {
 						output[i] = w.getName();
 						w.addNewActivity(eDate, e);
 					}
-					else if(workerList[i]!= 0 && workerList[i] == w.getWorksWithout()){
+					/*
+					// This code sets the last active date to the current date for a worker whose "worksWithout partner"
+					// was active. This makes the assignment for the worker more unlikely. Therefore it is not active.
+
+					else if(workerList[i]!= 0 && w.getWorksWithout().contains(workerList[i])){
 						w.setLastDate(eDate);
 					}
-					if(workerList[i] == -2){
+					*/
+					else if(workerList[i] == -2){
 						output[i] = "nobody available";
 					}
 				}
