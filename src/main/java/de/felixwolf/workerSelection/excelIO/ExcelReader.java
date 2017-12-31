@@ -6,14 +6,7 @@ import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.TimeZone;
+import java.util.*;
 
 import de.felixwolf.workerSelection.dataTypes.*;
 import org.apache.poi.ss.usermodel.*;
@@ -887,6 +880,7 @@ public class ExcelReader {
 	public ArrayList<Worker> readWorkers(int biggestCounter) {
 		// read the information for the workers and put them into the arrayList
 		ArrayList<Worker> allWorkers = new ArrayList<Worker>();
+		HashMap<Integer, ArrayList<Integer>> workswithoutMap = new HashMap<>();
 
 		int rowNum = 1;
 		boolean workersLeftToBeRead = true;
@@ -995,7 +989,37 @@ public class ExcelReader {
 			Cell worksWithoutCell = workerRow.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 			if(worksWithoutCell != null){
 				try {
-					worker1.setWorksWithout(readCellOfIntegers(worksWithoutCell));
+					ArrayList<Integer> excludedWorkers = readCellOfIntegers(worksWithoutCell);
+					// set all excluded workers for current worker
+					if(workswithoutMap.containsKey(workerID)){
+						ArrayList<Integer> alreadyExcludedWorkers = workswithoutMap.get(workerID);
+						for(int excludedWorker : excludedWorkers){
+							if(!alreadyExcludedWorkers.contains(excludedWorker)){
+								alreadyExcludedWorkers.add(excludedWorker);
+							}
+						}
+					}
+					else {
+						workswithoutMap.put(workerID, excludedWorkers);
+					}
+
+					// add current worker to excluded list of all excluded workers
+					for(int excludedWorker : excludedWorkers){
+						if(workswithoutMap.containsKey(excludedWorker)){
+							ArrayList<Integer> excludedWorkerList = workswithoutMap.get(excludedWorker);
+
+							if(!excludedWorkerList.contains(workerID)){
+								excludedWorkerList.add(workerID);
+							}
+						}
+						else {
+							ArrayList<Integer> newExcludedList = new ArrayList<>();
+							newExcludedList.add(workerID);
+							workswithoutMap.put(excludedWorker, newExcludedList);
+						}
+					}
+
+					//worker1.setWorksWithout(readCellOfIntegers(worksWithoutCell));
 				} catch (ParseException e) {
 					LOGGER.error("Workswithout for " + workerName + "could not be read.");
 					e.printStackTrace();
@@ -1034,6 +1058,20 @@ public class ExcelReader {
 
 			rowNum++;
 		} while (workersLeftToBeRead);
+
+		// write workswithout information to workers
+		for(Worker worker:allWorkers){
+			if(workswithoutMap.containsKey(worker.getId())){
+				worker.setWorksWithout(workswithoutMap.get(worker.getId()));
+			}
+		}
+
+		// Begin of debugging for reciprocal workswithout
+		Set<Integer> workswithoutKeys = workswithoutMap.keySet();
+		for (Integer key:workswithoutKeys){
+			LOGGER.debug("Exclusion debugging: " + key + " won't work with " + workswithoutMap.get(key));
+		}
+		// Debugging end
 
 		LOGGER.info("All workers are read in. The last worker is from line " + rowNum);
 		return allWorkers;
