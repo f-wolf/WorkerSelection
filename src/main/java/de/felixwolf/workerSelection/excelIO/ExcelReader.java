@@ -863,6 +863,7 @@ public class ExcelReader {
 				try {
 					singleInt = Integer.parseInt(str);
 				} catch (NumberFormatException e){
+					LOGGER.debug("String length: " + String.valueOf(str.length()));
 					throw new ParseException(str + " could not be parsed.", 0);
 				}
 				intsOfCell.add(singleInt);
