@@ -61,7 +61,7 @@ public class Run {
 
 		// selection
 		for (Event e : allEvents) {
-			//System.out.println(e.getDate());
+			LOGGER.trace("EVENT: " + e.getDate() + " " + e.getName());
 			// control arrays
 			boolean[] control = new boolean[jobList.size()];
 			String[] output = new String[jobList.size()];
@@ -117,6 +117,13 @@ public class Run {
 					continue;
 				}
 
+				// if the works with partner is already selected, pick the counterpart as well
+				worker = pSelect.partnerAlreadySelected(workerList, taskID, selectionGroup4);
+				if(worker != -1){
+					// write information
+					workerList = addWorker2workerList(worker, taskID, workerList, jobList);
+					continue;
+				}
 				// remove workers who have worked in the coolDownPhase
 				ArrayList<Worker> selectionGroup5 = red0.reduceGroupCoolDown(eDate, coolDownTime, selectionGroup4);
 
@@ -130,7 +137,7 @@ public class Run {
 				}
 
 				// does a worker prefer the specific date or event
-				worker = pSelect.datePreference(e, selectionGroup5);
+				worker = pSelect.datePreference(e, selectionGroup6);
 				if(worker != -1){
 					// write information
 					workerList = addWorker2workerList(worker, taskID, workerList, jobList);
@@ -138,7 +145,7 @@ public class Run {
 				}
 
 				// find next worker with ranking
-				RankingSelection rSelect = new RankingSelection(e, selectionGroup5);
+				RankingSelection rSelect = new RankingSelection(e, selectionGroup6);
 				rSelect.counterRanking();
 				rSelect.eventRanking();
 				rSelect.lastActiveRaking();
@@ -147,6 +154,7 @@ public class Run {
 				worker = rSelect.bestWorker();
 
 				workerList = addWorker2workerList(worker, taskID, workerList, jobList);
+				LOGGER.trace("TASK " + taskID + " Selected " + worker + " Debug taskIDX: " + taskidx + " total: " + e.getEventTasks().size());
 
 			}// end task
 

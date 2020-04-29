@@ -5,10 +5,7 @@ import de.felixwolf.workerSelection.dataTypes.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 
@@ -214,20 +211,32 @@ public class Reducor {
 			return selectionGroup;
 		}
 
-		//LOGGER.debug("Running Check");
+		LOGGER.debug("Running Check");
 		ArrayList<Integer> kickList = new ArrayList<Integer>();
 		for (Worker w : selectionGroup) {
 			if (w.getWorksWith() > 0){
-				//LOGGER.debug("Removing " + w.getId());
+				LOGGER.debug("Removing " + w.getId());
 				kickList.add(selectionGroup.indexOf(w));
 			}
 
 		}
 		ArrayList<Worker> newGroup = kicking(kickList, selectionGroup);
+		LOGGER.debug("Old group: " + Arrays.toString(workerListToArrayOfIDs(selectionGroup)) + " New group: " + Arrays.toString(workerListToArrayOfIDs(newGroup)));
 		return newGroup;
 	}
 
-	
+	private int [] workerListToArrayOfIDs(ArrayList<Worker> workerList){
+
+		int [] workerIds = new int[workerList.size()];
+
+		for (int i = 0; i < workerList.size(); i++){
+			workerIds[i] = workerList.get(i).getId();
+		}
+		return workerIds;
+	}
+
+
+
 	/*
 	 * Phase 2 finished
 	 */

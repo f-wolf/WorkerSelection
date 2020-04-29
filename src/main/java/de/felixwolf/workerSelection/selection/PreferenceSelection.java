@@ -1,6 +1,9 @@
 package de.felixwolf.workerSelection.selection;
 
+import de.felixwolf.workerSelection.Run;
 import de.felixwolf.workerSelection.dataTypes.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -9,6 +12,8 @@ import java.util.HashMap;
 
 
 public class PreferenceSelection {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(PreferenceSelection.class);
 	
 	public int alreadyActiveWorker(int[] workerList, int taskID, ArrayList<Integer> jobList, ArrayList<Worker> selectionGroup){
 		// returns id of already active worker for a second task
@@ -29,7 +34,27 @@ public class PreferenceSelection {
 		}
 		return selectedWorker;
 	}
-	
+
+	public int partnerAlreadySelected(int[] workerList, int taskID, ArrayList<Worker> selectionGroup){
+		// returns id of partner of already active worker
+
+		for (Worker w : selectionGroup) {
+			int workerPartnerID = w.getWorksWith();
+			if (workerPartnerID == 0){
+				// This worker does not have a partner
+				continue;
+			}
+
+			for (int w2idx = 0; w2idx < workerList.length; w2idx++) {
+				if (workerList[w2idx] == workerPartnerID && w.getPossibleTasks().contains(taskID)){
+					LOGGER.debug("Partner found: " + w.getId() + " for " + workerList[w2idx]);
+					return w.getId();
+				}
+			}
+		}
+		return -1;
+	}
+
 	public int datePreference(Event e, ArrayList<Worker> selectionGroup){
 		
 		for(Worker w:selectionGroup){
