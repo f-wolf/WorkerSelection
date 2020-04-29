@@ -90,7 +90,8 @@ public class Run {
 			// write the basic info to the output string
 			output = ana.creatEventInfo(e, jobList.size());
 
-			for (int taskID : e.getEventTasks()) {
+			for (int taskidx = 0; taskidx < e.getEventTasks().size(); taskidx++){
+				int taskID = e.getEventTasks().get(taskidx);
 
 				int worker = -1;
 				// create pool of all workers and remove the unsuitable workers in the following steps
@@ -119,7 +120,10 @@ public class Run {
 				// remove workers who have worked in the coolDownPhase
 				ArrayList<Worker> selectionGroup5 = red0.reduceGroupCoolDown(eDate, coolDownTime, selectionGroup4);
 
-				if(selectionGroup5.size() == 0){
+				// remove works with workers if this is the last slot
+				ArrayList<Worker> selectionGroup6 = red0.reduceWorksWithLastSlot(taskidx, e.getEventTasks().size(), selectionGroup5);
+
+				if(selectionGroup6.size() == 0){
 					// nobody left
 					workerList = addWorker2workerList(-2, taskID, workerList, jobList);
 					continue;

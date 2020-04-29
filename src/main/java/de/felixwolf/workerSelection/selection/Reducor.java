@@ -1,6 +1,9 @@
 package de.felixwolf.workerSelection.selection;
 
+import de.felixwolf.workerSelection.Run;
 import de.felixwolf.workerSelection.dataTypes.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -10,7 +13,9 @@ import java.util.concurrent.TimeUnit;
 
 
 public class Reducor {
-	
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(Reducor.class);
+
 	public ArrayList<Worker> reduceGroupTask(int taskID, ArrayList<Worker> selectionGroup){
 		ArrayList<Worker> newGroup = new ArrayList<Worker>(); 
 		
@@ -198,8 +203,30 @@ public class Reducor {
 		}
 		ArrayList<Worker> newGroup = kicking(kickList, selectionGroup);
 		return newGroup;
-
 	}
+
+	public ArrayList<Worker> reduceWorksWithLastSlot(int taskIdx, int totalNumOfTasks,
+													  ArrayList<Worker> selectionGroup) {
+
+		// check that we are at the last task of the event
+		if (taskIdx < totalNumOfTasks - 1){
+			//LOGGER.debug("This is not the last slot. Therefore this check is not necessary");
+			return selectionGroup;
+		}
+
+		//LOGGER.debug("Running Check");
+		ArrayList<Integer> kickList = new ArrayList<Integer>();
+		for (Worker w : selectionGroup) {
+			if (w.getWorksWith() > 0){
+				//LOGGER.debug("Removing " + w.getId());
+				kickList.add(selectionGroup.indexOf(w));
+			}
+
+		}
+		ArrayList<Worker> newGroup = kicking(kickList, selectionGroup);
+		return newGroup;
+	}
+
 	
 	/*
 	 * Phase 2 finished
