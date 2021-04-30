@@ -6,7 +6,7 @@
 
     <groupId>workerSelection</groupId>
     <artifactId>WorkerSelection</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
 
     <dependencies>
         <dependency>
@@ -28,17 +28,14 @@
             <artifactId>poi</artifactId>
             <version>4.1.2</version>
         </dependency>
-
     </dependencies>
 
     <build>
-
         <plugins>
             <plugin>
                 <!-- Build an executable JAR -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -55,14 +52,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.2</version>
+                <version>3.8.0</version>
                 <configuration>
-                    <source>1.11</source>
-                    <target>1.11</target>
+                    <release>11</release>
                 </configuration>
             </plugin>
         </plugins>
-
     </build>
-
 </project>
