@@ -28,6 +28,10 @@ public class Run {
 
 	public static void main(String[] args) {
 
+		if (args.length == 1){
+			inputPath = args[0];
+		}
+
 		Settings.init(inputPath);
 		readInputFile();
 		processData();
